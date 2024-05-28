@@ -4,7 +4,7 @@ class Puzzle {
     this.smallRects = smallRects;
     this.guidelines = [];
     this.placedOrder = [];
-    this.cornerSize = 10;
+    this.cornerSize = 8;
     this.dragging = false;
     this.dragPoint = null;
     this.currentRect = null;
@@ -42,6 +42,7 @@ class Puzzle {
       this.currentRect.scale(this.dragPoint);
     }
 
+    noStroke();
     // Check if all rectangles are placed correctly based on location and size accuracy
     if (this.checkAllPlacements()) {
       fill(0, 255, 0);

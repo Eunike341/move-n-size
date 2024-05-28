@@ -10,8 +10,11 @@ class Rectangle {
   display() {
     fill(this.col);
     rect(this.x, this.y, this.w, this.h);
-    fill(255, 0, 0);
-    noStroke();
+    //fill(200, 0, 0);
+    noFill();
+    //noStroke();
+    stroke(0, 0, 0); // Set the stroke color for the corner points
+    strokeWeight(2); 
     let points = this.getScalePoints();
     for (let p of points) {
       rect(p.x - puzzle.cornerSize / 2, p.y - puzzle.cornerSize / 2, puzzle.cornerSize, puzzle.cornerSize);
