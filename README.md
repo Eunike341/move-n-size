@@ -1,4 +1,5 @@
-# move-n-size
+# MOVE-N-SIZE
+A simple puzzle like application using p5.js
 
 # Installation
 
