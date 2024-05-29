@@ -1,17 +1,16 @@
 class Puzzle {
-  constructor(bigRectX, bigRectY, bigRectW, bigRectH, smallRects, guidelineColors) {
+  constructor(bigRectX, bigRectY, bigRectW, bigRectH, smallRects, guidelineColors, numOfRows, numOfCols) {
     this.bigRect = new Rectangle(bigRectX, bigRectY, bigRectW, bigRectH, color(200, 200, 200));
     this.smallRects = smallRects;
     this.guidelines = [];
     this.placedOrder = [];
-    this.cornerSize = 8;
+    this.cornerSize = 10;
     this.dragging = false;
     this.dragPoint = null;
     this.currentRect = null;
 
-    // Calculate the number of rows and columns based on the number of small rectangles
-    let rows = Math.ceil(Math.sqrt(smallRects.length));
-    let cols = rows; // For simplicity, assume a square grid
+    let rows = numOfRows;
+    let cols = numOfCols;
 
     // Define guidelines within the big rectangle
     let guidelineWidth = this.bigRect.w / cols;
@@ -32,7 +31,7 @@ class Puzzle {
 
   display() {
     background(220);
-    this.bigRect.display();
+    this.bigRect.displayNoCornerPoint();
     this.drawGuidelines();
 
     for (let rect of this.smallRects) {
@@ -47,11 +46,11 @@ class Puzzle {
     if (this.checkAllPlacements()) {
       fill(0, 255, 0);
       textSize(32);
-      text('Correct Placement and Size!', 10, height - 20);
+      text('Correct Placement and Size!', 50, height - 30);
     } else {
       fill(255, 0, 0);
       textSize(32);
-      text('Move and Resize the Small Rectangles', 10, height - 20);
+      text('Move and Resize the Small Rectangles', 50, height - 30);
     }
   }
 

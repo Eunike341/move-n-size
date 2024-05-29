@@ -14,12 +14,20 @@ class Rectangle {
     noFill();
     //noStroke();
     stroke(0, 0, 0); // Set the stroke color for the corner points
-    strokeWeight(2); 
+    strokeWeight(2);
     let points = this.getScalePoints();
+    let displayCornerSize = 4;
     for (let p of points) {
-      rect(p.x - puzzle.cornerSize / 2, p.y - puzzle.cornerSize / 2, puzzle.cornerSize, puzzle.cornerSize);
+      rect(p.x - displayCornerSize / 2, p.y - displayCornerSize / 2, displayCornerSize, displayCornerSize);
     }
   }
+
+  displayNoCornerPoint() {
+      fill(this.col);
+      rect(this.x, this.y, this.w, this.h);
+      stroke(0, 0, 0);
+      strokeWeight(2);
+    }
 
   getScalePoints() {
     return [
