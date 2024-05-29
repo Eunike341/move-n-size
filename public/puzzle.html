@@ -7,12 +7,22 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <script src="classes/rectangle.js"></script>
     <script src="classes/dynamicpuzzle.js"></script>
-    <script>
-    // Function to get the value of a query parameter by name
-    function getQueryParam(name) {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(name);
-    }
+
+    <script type="module">
+    // Import Firebase modules
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
+    import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
+    import { getQueryParam, startTimer, updateTimer, stopTimer, submitTimeToFirestore } from './util.js';
+
+    // Your Firebase configuration object
+    const firebaseConfig = {
+
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
 
     // Load the appropriate sketch based on the 'level' query parameter
     const level = getQueryParam('level');
@@ -31,7 +41,34 @@
       script.src = `sketches/${scriptName}.js`;
       document.head.appendChild(script);
     }
-  </script>
+
+    document.getElementById('level-number').textContent = level;
+
+    let puzzleCompletedFlag = false;
+
+    // Start the timer when the page loads
+    window.onload = () => startTimer();
+
+    window.puzzleCompleted = async () => {
+      if (!puzzleCompletedFlag) {
+        puzzleCompletedFlag = true;
+        stopTimer();
+
+        // Get user input values
+        const name = document.getElementById('name').value;
+        const inviteCode = '';
+
+        // Get IP address
+        const ipResponse = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipResponse.json();
+        const ipAddress = ipData.ip;
+
+        submitTimeToFirestore(db, level, name, inviteCode, ipAddress);
+      }
+    }
+
+    </script>
+
 
   <style>
     .timer-container {
@@ -55,41 +92,15 @@
 <h1>Level <span id="level-number"></span></h1>
 <a href="index.html">Home</a>
 
+<div>
+    <label for="name">Name:</label>&nbsp;
+    <input type="text" id="name" name="name">
+</div>
+
 <div class="timer-container">
     <div id="timer">Time: 0s</div>
     <div id="celebration" class="celebration-icon">&#127881;</div>
 </div>
 
-<script>
-    document.getElementById('level-number').textContent = level;
-
-    let startTime, intervalId;
-    let puzzleCompletedFlag = false;
-
-    function startTimer() {
-      startTime = new Date();
-      intervalId = setInterval(updateTimer, 1000);
-    }
-
-    function updateTimer() {
-      const currentTime = new Date();
-      const elapsedTime = Math.floor((currentTime - startTime) / 1000);
-      document.getElementById('timer').textContent = `Time: ${elapsedTime}s`;
-    }
-
-    function stopTimer() {
-      clearInterval(intervalId);
-      document.getElementById('celebration').style.display = 'inline';
-    }
-
-    window.onload = startTimer;
-
-    function puzzleCompleted() {
-      if (!puzzleCompletedFlag) {
-        puzzleCompletedFlag = true;
-        stopTimer();
-      }
-    }
-  </script>
 </body>
 </html>

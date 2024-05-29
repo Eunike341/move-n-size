@@ -27,3 +27,11 @@ build-local/
 
 ### VS Code ###
 .vscode/
+
+.fire*
+fire*
+
+node_modules
+package-lock.json
+
+public/index.bak

@@ -5,7 +5,11 @@ A simple puzzle like application using p5.js
 
 ## Requirements
 
-Web server
+Node, firebase
 
-### Start local server with python
-python -m http.server 8000
+### Start local server
+npm start
+
+
+# Deployment
+firebase deploy
