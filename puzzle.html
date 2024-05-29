@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puzzle</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <script src="classes/rectangle.js"></script>
+    <script src="classes/dynamicpuzzle.js"></script>
+    <script>
+    // Function to get the value of a query parameter by name
+    function getQueryParam(name) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(name);
+    }
+
+    // Load the appropriate sketch based on the 'level' query parameter
+    const level = getQueryParam('level');
+    let scriptName = 'rect_4';
+    if (level) {
+      if (level==2) {
+        scriptName = 'rect_5';
+      } else if (level==3) {
+        scriptName = 'rect_6';
+      } else if (level==4) {
+        scriptName = 'rect_9';
+      } else if (level==5) {
+        scriptName = 'rect_10';
+      }
+      const script = document.createElement('script');
+      script.src = `sketches/${scriptName}.js`;
+      document.head.appendChild(script);
+    }
+  </script>
+</head>
+<body>
+<h1>Level <span id="level-number"></span></h1>
+<a href="index.html">Home</a>
+
+<script>
+    // Display the current level number
+    document.getElementById('level-number').textContent = level;
+  </script>
+</body>
+</html>
