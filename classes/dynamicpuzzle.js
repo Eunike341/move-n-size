@@ -44,9 +44,11 @@ class Puzzle {
     noStroke();
     // Check if all rectangles are placed correctly based on location and size accuracy
     if (this.checkAllPlacements()) {
-      fill(0, 255, 0);
+      fill(0, 128, 0);
       textSize(32);
       text('Correct Placement and Size!', 50, height - 30);
+      this.completed = true;
+      puzzleCompleted();
     } else {
       fill(255, 0, 0);
       textSize(32);

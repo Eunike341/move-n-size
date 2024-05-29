@@ -23,23 +23,73 @@
       } else if (level==3) {
         scriptName = 'rect_6';
       } else if (level==4) {
-        scriptName = 'rect_9';
-      } else if (level==5) {
         scriptName = 'rect_10';
+      } else if (level==5) {
+        scriptName = 'rect_9';
       }
       const script = document.createElement('script');
       script.src = `sketches/${scriptName}.js`;
       document.head.appendChild(script);
     }
   </script>
+
+  <style>
+    .timer-container {
+      display: flex;
+      align-items: center;
+      font-size: 24px;
+      margin-top: 10px;
+    }
+    .celebration-icon {
+      display: none;
+      font-size: 20px;
+      margin-left: 10px;
+    }
+    .completed .celebration-icon {
+      display: inline;
+    }
+  </style>
+
 </head>
 <body>
 <h1>Level <span id="level-number"></span></h1>
 <a href="index.html">Home</a>
 
+<div class="timer-container">
+    <div id="timer">Time: 0s</div>
+    <div id="celebration" class="celebration-icon">&#127881;</div>
+</div>
+
 <script>
-    // Display the current level number
     document.getElementById('level-number').textContent = level;
+
+    let startTime, intervalId;
+    let puzzleCompletedFlag = false;
+
+    function startTimer() {
+      startTime = new Date();
+      intervalId = setInterval(updateTimer, 1000);
+    }
+
+    function updateTimer() {
+      const currentTime = new Date();
+      const elapsedTime = Math.floor((currentTime - startTime) / 1000);
+      document.getElementById('timer').textContent = `Time: ${elapsedTime}s`;
+    }
+
+    function stopTimer() {
+      clearInterval(intervalId);
+      document.getElementById('celebration').style.display = 'inline';
+    }
+
+    window.onload = startTimer;
+
+    function puzzleCompleted() {
+      if (!puzzleCompletedFlag) {
+        puzzleCompletedFlag = true;
+        stopTimer();
+      }
+    }
   </script>
 </body>
 </html>

@@ -16,7 +16,7 @@ function setup() {
     color(255, 255, 0, 100)
   ];
 
-  puzzle = new Puzzle(width / 4, height / 4, 400, 300, smallRects, guidelineColors, 2, 2);
+  puzzle = new Puzzle(50, height / 4, 400, 300, smallRects, guidelineColors, 2, 2);
 }
 
 function draw() {
