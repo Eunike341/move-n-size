@@ -74,12 +74,14 @@ class Puzzle {
           this.dragging = true;
           this.dragPoint = j;
           this.currentRect = rect;
+          startTimerFromPuzzle();
           return;
         }
       }
       if (rect.isInside(mouseX, mouseY)) {
         this.dragging = true;
         this.currentRect = rect;
+        startTimerFromPuzzle();
         return;
       }
     }

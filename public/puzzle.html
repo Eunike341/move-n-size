@@ -14,7 +14,7 @@
     import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
     import { getQueryParam, startTimer, updateTimer, stopTimer, submitTimeToFirestore } from './util.js';
 
-    // Your Firebase configuration object
+    // Firebase config apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId.
     const firebaseConfig = {
 
     };
@@ -44,26 +44,37 @@
 
     document.getElementById('level-number').textContent = level;
 
+    let timerStarted = false;
     let puzzleCompletedFlag = false;
-
-    // Start the timer when the page loads
-    window.onload = () => startTimer();
 
     window.puzzleCompleted = async () => {
       if (!puzzleCompletedFlag) {
         puzzleCompletedFlag = true;
         stopTimer();
 
-        // Get user input values
         const name = document.getElementById('name').value;
         const inviteCode = '';
 
-        // Get IP address
-        const ipResponse = await fetch('https://api.ipify.org?format=json');
-        const ipData = await ipResponse.json();
-        const ipAddress = ipData.ip;
+        let ipAddress = '0.0.0.0';
+        try {
+          const ipResponse = await fetch('https://api.ipify.org?format=json');
+          if (!ipResponse.ok) {
+            throw new Error('Failed to fetch IP address');
+          }
+          const ipData = await ipResponse.json();
+          ipAddress = ipData.ip;
+        } catch (error) {
+          console.error('Error fetching IP address:', error);
+        }
 
         submitTimeToFirestore(db, level, name, inviteCode, ipAddress);
+      }
+    }
+
+    window.startTimerFromPuzzle = () => {
+      if (!timerStarted) {
+        timerStarted = true;
+        startTimer();
       }
     }
 
