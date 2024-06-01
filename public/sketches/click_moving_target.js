@@ -4,6 +4,7 @@ let wrongClicks = 0;
 let timer = 30;
 let gameRunning = true;
 let currentClick = ''; // Will be set randomly in setup
+let targetX, targetY;
 
 function setup() {
   createCanvas(400, 400);
@@ -17,6 +18,10 @@ function setup() {
 
   // Randomize the initial turn
   currentClick = random(['left', 'right']);
+
+  // Initialize target position
+  targetX = random(100, 300);
+  targetY = random(100, 300);
 }
 
 function draw() {
@@ -51,18 +56,29 @@ function draw() {
   if (!gameRunning) {
     textSize(32);
     fill(0); // Black text
-    text('Game Over!', width / 2, 350);
+    text('Game Over!', width / 2, height / 2);
   }
+
+  // Move target
+  moveTarget();
+  drawTarget();
 }
 
 function mousePressed() {
   if (gameRunning) {
-    if (currentClick === 'left' && mouseButton === LEFT) {
-      leftScore++;
-      currentClick = random(['left', 'right']);
-    } else if (currentClick === 'right' && mouseButton === RIGHT) {
-      rightScore++;
-      currentClick = random(['left', 'right']);
+    if (dist(mouseX, mouseY, targetX, targetY) < 20) {
+      if (currentClick === 'left' && mouseButton === LEFT) {
+        leftScore++;
+        currentClick = random(['left', 'right']);
+      } else if (currentClick === 'right' && mouseButton === RIGHT) {
+        rightScore++;
+        currentClick = random(['left', 'right']);
+      } else {
+        wrongClicks++;
+      }
+      // Move target to new random position
+      targetX = random(100, 300);
+      targetY = random(100, 300);
     } else {
       wrongClicks++;
     }
@@ -80,23 +96,35 @@ function decreaseTimer() {
 }
 
 function drawMouse() {
-  // Draw the mouse body
-  fill(135, 206, 250); // Light blue
-  rect(width / 2 - 50, height / 2 - 45, 100, 120, 20);
 
-  // Draw the left button
-  if (currentClick === 'left') {
-    fill(50, 205, 50); // Green for active
-  } else {
-    fill(135, 206, 250); // Light green
-  }
-  rect(width / 2 - 45, height / 2 - 40, 40, 40, 10, 0, 0, 10);
+}
 
-  // Draw the right button
-  if (currentClick === 'right') {
-    fill(255, 69, 0); // Red for active
-  } else {
-    fill(135, 206, 250); // Light red
+function moveTarget() {
+  // Update target position to create a moving effect
+  targetX += random(-2, 2);
+  targetY += random(-2, 2);
+
+  // Constrain the target position within the canvas
+  targetX = constrain(targetX, 100, 300);
+  targetY = constrain(targetY, 100, 300);
+}
+
+function drawTarget() {
+  fill(255, 215, 0); // Black target
+  drawStar(targetX, targetY, 10, 20, 5);
+}
+
+function drawStar(x, y, radius1, radius2, npoints) {
+  let angle = TWO_PI / npoints;
+  let halfAngle = angle / 2.0;
+  beginShape();
+  for (let a = 0; a < TWO_PI; a += angle) {
+    let sx = x + cos(a) * radius2;
+    let sy = y + sin(a) * radius2;
+    vertex(sx, sy);
+    sx = x + cos(a + halfAngle) * radius1;
+    sy = y + sin(a + halfAngle) * radius1;
+    vertex(sx, sy);
   }
-  rect(width / 2 + 5, height / 2 - 40, 40, 40, 0, 10, 10, 0);
+  endShape(CLOSE);
 }

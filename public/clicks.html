@@ -5,7 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Move-N-Size</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
-    <script src="sketches/left_right.js"></script>
+
+    <script>
+    // Function to get the value of a query parameter by name
+    function getQueryParam(name) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(name);
+    }
+
+    // Load the appropriate sketch based on the 'level' query parameter
+    const scriptName = getQueryParam('sketch');
+    const script = document.createElement('script');
+    script.src = `sketches/${scriptName}.js`;
+    document.head.appendChild(script);
+
+  </script>
+
 </head>
 <body>
 </body>
