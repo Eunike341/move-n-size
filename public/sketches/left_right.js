@@ -3,8 +3,8 @@ let rightScore = 0;
 let wrongClicks = 0;
 let timer = 30;
 let gameRunning = false;
-let timerStarted = false; // New flag to track if the timer has started
-let currentClick = ''; // Will be set randomly in setup
+let timerStarted = false;
+let currentClick = '';
 
 function setup() {
   createCanvas(400, 400);
@@ -38,14 +38,16 @@ function draw() {
 
   // Display instructions for the current click
   textSize(24);
-  fill(0); // Black text
-  text('Click:', width / 2 - 30, 300);
   if (currentClick === 'left') {
     fill(50, 205, 50); // Green for active
-    text('LEFT', width / 2 + 32, 300);
+    text('LEFT', width / 2 - 30, 300);
+    fill(0); // Black text
+    text('click', width / 2 + 28, 300);
   } else {
     fill(255, 69, 0); // Red for active
-    text('RIGHT', width / 2 + 40, 300);
+    text('RIGHT', width / 2 - 30, 300);
+    fill(0); // Black text
+    text('click', width / 2 + 36, 300);
   }
 
   if (!gameRunning && timerStarted ) {

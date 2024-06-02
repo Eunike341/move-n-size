@@ -3,12 +3,12 @@ let rightScore = 0;
 let wrongClicks = 0;
 let timer = 30;
 let gameRunning = true;
-let currentClick = ''; // Will be set randomly in setup
+let timerStarted = false;
+let currentClick = '';
 let targetX, targetY;
 
 function setup() {
   createCanvas(400, 400);
-  setInterval(decreaseTimer, 1000);
 
   // Disable the context menu on right-click
   canvas = document.getElementById('defaultCanvas0');
@@ -68,7 +68,12 @@ function draw() {
 }
 
 function mousePressed() {
-  if (gameRunning) {
+  if (!timerStarted && mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
+    timerStarted = true;
+    setInterval(decreaseTimer, 1000);
+  }
+
+  if (gameRunning && timerStarted) {
     if (dist(mouseX, mouseY, targetX, targetY) < 20) {
       if (currentClick === 'left' && mouseButton === LEFT) {
         leftScore++;
