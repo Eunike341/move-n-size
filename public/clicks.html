@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Move-N-Size</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+    <script src="classes/clicking.js"></script>
 
     <script>
     // Function to get the value of a query parameter by name
@@ -13,15 +14,38 @@
       return urlParams.get(name);
     }
 
-    // Load the appropriate sketch based on the 'level' query parameter
-    const scriptName = getQueryParam('sketch');
-    const script = document.createElement('script');
-    script.src = `sketches/${scriptName}.js`;
-    document.head.appendChild(script);
+    const level = getQueryParam('level');
+    let scriptName = 'left_right';
+    if (level) {
+      if (level==2) {
+        scriptName = 'click_short';
+      } else if (level==3) {
+        scriptName = 'click_long';
+      } else if (level==4) {
+        scriptName = 'click_moving_target';
+      }
+      const script = document.createElement('script');
+      script.src = `sketches/${scriptName}.js`;
+      document.head.appendChild(script);
+    }
 
   </script>
 
+  <link rel="stylesheet" href="styles_header.css">
+
 </head>
 <body>
+    <h1>Level <span id="level-number"></span></h1>
+    <script type="text/javascript">
+        document.getElementById('level-number').textContent = level;
+    </script>
+    <a href="index.html" class="home-link">Home</a>
+
+    <div class="form-group">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name">
+    </div>
+
+    <div id="gameContainer"></div>
 </body>
 </html>

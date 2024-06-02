@@ -51,7 +51,7 @@ function draw() {
   if (!gameRunning) {
     textSize(32);
     fill(0); // Black text
-    text('Game Over!', width / 2, 350);
+    text('Finish!', width / 2, 350);
   }
 }
 

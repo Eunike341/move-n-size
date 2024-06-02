@@ -29,6 +29,7 @@ h1 {
 
 .form-group {
   margin-top: 20px;
+  margin-bottom: 10px;
   display: flex;
   align-items: center;
 }

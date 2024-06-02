@@ -43,20 +43,22 @@ function draw() {
 
   // Display instructions for the current click
   textSize(24);
-  fill(0); // Black text
-  text('Click:', width / 2 - 30, 300);
   if (currentClick === 'left') {
     fill(50, 205, 50); // Green for active
-    text('LEFT', width / 2 + 32, 300);
+    text('LEFT', width / 2 - 112, 300);
+    fill(0);
+    text('click the moving star', width / 2 + 32, 300);
   } else {
     fill(255, 69, 0); // Red for active
-    text('RIGHT', width / 2 + 40, 300);
+    text('RIGHT', width / 2 - 115, 300);
+    fill(0);
+    text('click the moving star', width / 2 + 40, 300);
   }
 
   if (!gameRunning) {
     textSize(32);
     fill(0); // Black text
-    text('Game Over!', width / 2, height / 2);
+    text('Finish!', width / 2, height / 2);
   }
 
   // Move target
