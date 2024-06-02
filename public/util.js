@@ -1,5 +1,5 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
-import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
+import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
 import firebaseConfig from './firebaseConfig.js';
 
 const inviteCode = 'MINGGU_BELAJAR';
@@ -68,6 +68,96 @@ export async function submitScoreToFirestore(level, name, score, playType) {
     console.log('Score submitted successfully!');
   } catch (error) {
     console.error('Error submitting score: ', error);
+  }
+}
+
+export async function queryAndDisplayData(val, dataContainer) {
+  try {
+    // Get the start and end of today's date
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Start of today
+    const startOfDay = today.getTime();
+
+    today.setHours(23, 59, 59, 999); // End of today
+    const endOfDay = today.getTime();
+
+    const q = query(collection(db, inviteCode), where("name", "==", val),
+        where("timestamp", ">=", new Date(startOfDay)),
+        where("timestamp", "<=", new Date(endOfDay)));
+
+    const querySnapshot = await getDocs(q);
+
+    dataContainer.innerHTML = ''; // Clear previous results
+
+    if (querySnapshot.empty) {
+      const noResults = document.createElement('div');
+      noResults.textContent = 'No results found';
+      dataContainer.appendChild(noResults);
+      return;
+    }
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    const tbody = document.createElement('tbody');
+    const headerRow = document.createElement('tr');
+
+    // Create table headers
+    const headers = ['Name', 'Type', 'Level', 'Score', 'Date']; // Add your desired fields here
+    headers.forEach(headerText => {
+      const th = document.createElement('th');
+      th.textContent = headerText;
+      headerRow.appendChild(th);
+    });
+
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    // Populate table rows
+    querySnapshot.forEach((doc) => {
+      const row = document.createElement('tr');
+      const data = doc.data();
+
+      // Add a cell for each field
+      const nameCell = document.createElement('td');
+      nameCell.textContent = data.name;
+      row.appendChild(nameCell);
+
+      const typeCell = document.createElement('td');
+      typeCell.textContent = data.playType;
+      row.appendChild(typeCell);
+
+      const levelCell = document.createElement('td');
+      levelCell.textContent = data.level;
+      row.appendChild(levelCell);
+
+      const scoreCell = document.createElement('td');
+      scoreCell.innerHTML = '';
+      const nestedData = data.score;
+      for (const [key, value] of Object.entries(nestedData)) {
+        const nestedItem = document.createElement('div');
+        nestedItem.textContent = `${key}: ${value}`;
+        scoreCell.appendChild(nestedItem);
+      }
+      row.appendChild(scoreCell);
+
+      const dateCell = document.createElement('td');
+      const timestamp = data.timestamp; // Replace 'timestamp' with your actual timestamp field name
+      if (timestamp) {
+          const date = timestamp.toDate(); // Convert Firestore timestamp to JavaScript Date
+          const formattedDate = date.toLocaleDateString(); // Format date to locale date string
+          dateCell.textContent = formattedDate;
+      } else {
+          dateCell.textContent = 'N/A';
+      }
+      row.appendChild(dateCell);
+
+      tbody.appendChild(row);
+    });
+
+    table.appendChild(tbody);
+    dataContainer.appendChild(table);
+  } catch (error) {
+    console.error('Error getting documents: ', error);
   }
 }
 
