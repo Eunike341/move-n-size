@@ -78,6 +78,7 @@ ClickingGame.prototype.draw = function() {
     textSize(32);
     fill(0); // Black text
     text('Finish!', width / 2, height / 2 + 35);
+    gameCompleted({'clicked':this.score})
   }
 };
 

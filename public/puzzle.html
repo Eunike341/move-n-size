@@ -9,21 +9,8 @@
     <script src="classes/dynamicpuzzle.js"></script>
 
     <script type="module">
-    // Import Firebase modules
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
-    import { getFirestore, collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
     import { getQueryParam, startTimer, updateTimer, stopTimer, submitTimeToFirestore } from './util.js';
 
-    // Firebase config apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId.
-    const firebaseConfig = {
-    };
-
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-
-    // Load the appropriate sketch based on the 'level' query parameter
     const level = getQueryParam('level');
     let scriptName = 'rect_4';
     if (level) {
@@ -52,21 +39,7 @@
         stopTimer();
 
         const name = document.getElementById('name').value;
-        const inviteCode = '';
-
-        let ipAddress = '0.0.0.0';
-        try {
-          const ipResponse = await fetch('https://api.ipify.org?format=json');
-          if (!ipResponse.ok) {
-            throw new Error('Failed to fetch IP address');
-          }
-          const ipData = await ipResponse.json();
-          ipAddress = ipData.ip;
-        } catch (error) {
-          console.error('Error fetching IP address:', error);
-        }
-
-        submitTimeToFirestore(db, level, name, inviteCode, ipAddress);
+        submitTimeToFirestore(level, name, 'placement');
       }
     }
 

@@ -59,6 +59,7 @@ function draw() {
     textSize(32);
     fill(0); // Black text
     text('Finish!', width / 2, height / 2);
+    gameCompleted({'left':leftScore, 'right':rightScore, 'missed':wrongClicks})
   }
 
   // Move target

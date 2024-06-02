@@ -2,12 +2,12 @@ let leftScore = 0;
 let rightScore = 0;
 let wrongClicks = 0;
 let timer = 30;
-let gameRunning = true;
+let gameRunning = false;
+let timerStarted = false; // New flag to track if the timer has started
 let currentClick = ''; // Will be set randomly in setup
 
 function setup() {
   createCanvas(400, 400);
-  setInterval(decreaseTimer, 1000);
 
   // Disable the context menu on right-click
   canvas = document.getElementById('defaultCanvas0');
@@ -48,14 +48,21 @@ function draw() {
     text('RIGHT', width / 2 + 40, 300);
   }
 
-  if (!gameRunning) {
+  if (!gameRunning && timerStarted ) {
     textSize(32);
     fill(0); // Black text
     text('Finish!', width / 2, 350);
+    gameCompleted({'left':leftScore, 'right':rightScore, 'missed':wrongClicks});
   }
 }
 
 function mousePressed() {
+  if (!timerStarted && mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
+    timerStarted = true;
+    gameRunning = true;
+    setInterval(decreaseTimer, 1000);
+  }
+
   if (gameRunning) {
     if (currentClick === 'left' && mouseButton === LEFT) {
       leftScore++;
@@ -88,7 +95,7 @@ function drawMouse() {
   if (currentClick === 'left') {
     fill(50, 205, 50); // Green for active
   } else {
-    fill(135, 206, 250); // Light green
+    fill(135, 206, 250);
   }
   rect(width / 2 - 45, height / 2 - 40, 40, 40, 10, 0, 0, 10);
 
@@ -96,7 +103,7 @@ function drawMouse() {
   if (currentClick === 'right') {
     fill(255, 69, 0); // Red for active
   } else {
-    fill(135, 206, 250); // Light red
+    fill(135, 206, 250);
   }
   rect(width / 2 + 5, height / 2 - 40, 40, 40, 0, 10, 10, 0);
 }

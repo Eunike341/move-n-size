@@ -35,3 +35,4 @@ node_modules
 package-lock.json
 
 public/index.bak
+public/firebaseConfig.js

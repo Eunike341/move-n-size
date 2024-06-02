@@ -4,15 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Move-N-Size</title>
+    <link rel="stylesheet" href="styles_header.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
     <script src="classes/clicking.js"></script>
 
-    <script>
-    // Function to get the value of a query parameter by name
-    function getQueryParam(name) {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(name);
-    }
+    <script type="module">
+    import { getQueryParam, submitScoreToFirestore } from './util.js';
 
     const level = getQueryParam('level');
     let scriptName = 'left_right';
@@ -29,16 +26,28 @@
       document.head.appendChild(script);
     }
 
+    document.getElementById('level-number').textContent = level;
+
+    let puzzleCompletedFlag = false;
+
+    window.gameCompleted = async (scoreObj) => {
+      if (!puzzleCompletedFlag) {
+        puzzleCompletedFlag = true;
+
+        const name = document.getElementById('name').value;
+
+        submitScoreToFirestore(level, name, scoreObj, 'clicks');
+      }
+    }
+
   </script>
 
-  <link rel="stylesheet" href="styles_header.css">
+
 
 </head>
 <body>
     <h1>Level <span id="level-number"></span></h1>
-    <script type="text/javascript">
-        document.getElementById('level-number').textContent = level;
-    </script>
+
     <a href="index.html" class="home-link">Home</a>
 
     <div class="form-group">
