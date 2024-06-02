@@ -16,12 +16,6 @@
 
     // Firebase config apiKey, authDomain, projectId, storageBucket, messagingSenderId, appId.
     const firebaseConfig = {
-      apiKey: "AIzaSyCbZyEl5ezyU0QPJvIBmunCtp_dbehIGBo",
-      authDomain: "move-n-size.firebaseapp.com",
-      projectId: "move-n-size",
-      storageBucket: "move-n-size.appspot.com",
-      messagingSenderId: "1038027224084",
-      appId: "1:1038027224084:web:07a7f3bf68c096d522a301"
     };
 
     // Initialize Firebase
@@ -58,7 +52,7 @@
         stopTimer();
 
         const name = document.getElementById('name').value;
-        const inviteCode = 'MINGGU_BELAJAR';
+        const inviteCode = '';
 
         let ipAddress = '0.0.0.0';
         try {
@@ -85,13 +79,14 @@
 
     </script>
 
-
+    <link rel="stylesheet" href="styles_header.css">
   <style>
     .timer-container {
       display: flex;
       align-items: center;
       font-size: 24px;
       margin-top: 10px;
+      color: #000;
     }
     .celebration-icon {
       display: none;
@@ -106,15 +101,15 @@
 </head>
 <body>
 <h1>Level <span id="level-number"></span></h1>
-<a href="index.html">Home</a>
+<a href="index.html" class="home-link">Home</a>
 
-<div>
-    <label for="name">Name:</label>&nbsp;
+<div class="form-group">
+    <label for="name">Name:</label>
     <input type="text" id="name" name="name">
 </div>
 
 <div class="timer-container">
-    <div id="timer">Time: 0s</div>
+    <div id="timer">Time:&nbsp;&nbsp;&nbsp;0s</div>
     <div id="celebration" class="celebration-icon">&#127881;</div>
 </div>
 
