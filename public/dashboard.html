@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Move-N-Size</title>
+    <link rel="stylesheet" href="styles_header.css">
+
+    <style>
+        .button-left {
+          text-decoration: none;
+          color: #fff;
+          background-color: #4CAF50;
+          padding: 10px 20px;
+          border-radius: 5px;
+          transition: background-color 0.3s, transform 0.3s;
+          display: inline-block;
+          font-size: 1.1em;
+          text-align: left;
+          margin-top: 10px;
+        }
+
+        .button-left:hover {
+          background-color: #333;
+          transform: scale(1.05);
+        }
+    </style>
+
+    <script type="module">
+    import { calculateUserScores } from './util.js';
+
+    window.searchByName = async () => {
+      const dataContainer = document.getElementById('data-container');
+      calculateUserScores(dataContainer);
+    }
+
+  </script>
+
+
+</head>
+<body>
+    <h1>Dashboard</span></h1>
+
+    <a href="index.html" class="home-link">Home</a>
+
+    <a href="#" class="button-left" onclick="searchByName()" >Search</a>
+    <div id="data-container" class="table-container"></div>
+</body>
+</html>

@@ -102,7 +102,7 @@ export async function queryAndDisplayData(val, dataContainer) {
     const headerRow = document.createElement('tr');
 
     // Create table headers
-    const headers = ['Name', 'Type', 'Level', 'Score', 'Date']; // Add your desired fields here
+    const headers = ['Name', 'Type', 'Level', 'Score', 'Date'];
     headers.forEach(headerText => {
       const th = document.createElement('th');
       th.textContent = headerText;
@@ -141,7 +141,7 @@ export async function queryAndDisplayData(val, dataContainer) {
       row.appendChild(scoreCell);
 
       const dateCell = document.createElement('td');
-      const timestamp = data.timestamp; // Replace 'timestamp' with your actual timestamp field name
+      const timestamp = data.timestamp;
       if (timestamp) {
           const date = timestamp.toDate(); // Convert Firestore timestamp to JavaScript Date
           const formattedDate = date.toLocaleDateString(); // Format date to locale date string
@@ -160,5 +160,123 @@ export async function queryAndDisplayData(val, dataContainer) {
     console.error('Error getting documents: ', error);
   }
 }
+
+
+export async function calculateUserScores(dataContainer) {
+  try {
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Start of today
+    const startOfDay = today.getTime();
+
+    today.setHours(23, 59, 59, 999); // End of today
+    const endOfDay = today.getTime();
+
+    const q = query(collection(db, inviteCode),
+        where("timestamp", ">=", new Date(startOfDay)),
+        where("timestamp", "<=", new Date(endOfDay)));
+
+    const querySnapshot = await getDocs(q);
+    dataContainer.innerHTML = ''; // Clear previous results
+
+    const data = {};
+    querySnapshot.forEach((doc) => {
+      const entry = doc.data();
+      const userName = entry.name;
+      if (!data[userName]) {
+         data[userName] = [];
+      }
+      data[userName].push(entry);
+    });
+
+    const PLACEMENT_MULTIPLIER = 1;
+    const CLICK_LEVEL_CAP = 4;
+    const PLACEMENT_LEVEL_CAP = 5;
+    const users = {};
+
+    // Group data by user
+    Object.keys(data).forEach(userName => {
+        const userEntries = data[userName];
+        const groupedScores = { clicks: {}, placement: {} };
+
+        // Group scores by playType and level for each user
+        userEntries.forEach(entry => {
+            const key = `${entry.playType}_${entry.level}`;
+            if (!groupedScores[entry.playType][key]) {
+                groupedScores[entry.playType][key] = [];
+            }
+
+            let score = 0;
+            if (entry.playType === "clicks") {
+                if (entry.score.clicked !== undefined) {
+                    score = entry.score.clicked;
+                } else if (entry.score.left !== undefined && entry.score.right !== undefined && entry.score.missed !== undefined) {
+                    score = entry.score.left + entry.score.right - (entry.score.missed / 4);
+                }
+            } else if (entry.playType === "placement" && entry.score.time !== undefined) {
+                let divider = 1000;
+                if (entry.level == 3) {
+                    divider = 1500;
+                } else if (entry.level > 3) {
+                    divider = 3500;
+                }
+                score = divider / entry.score.time;
+                score *= PLACEMENT_MULTIPLIER;
+            }
+
+            groupedScores[entry.playType][key].push(score);
+        });
+
+        let totalClicksScore = 0;
+        let totalClicksWeight = 0;
+        let totalPlacementScore = 0;
+        let totalPlacementWeight = 0;
+
+        // Calculate average score for each group and apply weighting by level for each user
+        Object.keys(groupedScores.clicks).forEach(key => {
+            const scores = groupedScores.clicks[key];
+            const averageScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+            const level = parseInt(key.split('_')[1], 10);
+
+            if (level <= CLICK_LEVEL_CAP) {
+                totalClicksScore += averageScore * level;
+                totalClicksWeight += level;
+            }
+        });
+
+        Object.keys(groupedScores.placement).forEach(key => {
+            const scores = groupedScores.placement[key];
+            const averageScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+            const level = parseInt(key.split('_')[1], 10);
+
+            if (level <= PLACEMENT_LEVEL_CAP) {
+                totalPlacementScore += averageScore * level;
+                totalPlacementWeight += level;
+            }
+        });
+
+        // Calculate final scores without normalization
+        const finalClicksScore = totalClicksWeight > 0 ? totalClicksScore : 0;
+        const finalPlacementScore = totalPlacementWeight > 0 ? totalPlacementScore : 0;
+
+        // Combine scores if desired, or keep them separate for different analysis
+        users[userName] = {
+            totalScore: finalClicksScore + finalPlacementScore,
+            clicksScore: finalClicksScore,
+            placementScore: finalPlacementScore
+        };
+    });
+
+    // Convert the users object to an array and sort it by score in descending order
+    const sortedUsers = Object.entries(users)
+        .map(([name, score]) => ({ name, score }))
+        .sort((a, b) => b.score - a.score);
+
+   dataContainer.innerHTML = JSON.stringify(sortedUsers);
+  } catch (error) {
+    console.error('Error calculating overall score:', error);
+  }
+}
+
 
 
