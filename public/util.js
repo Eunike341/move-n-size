@@ -1,12 +1,15 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js';
 import { getFirestore, collection, addDoc, serverTimestamp, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js';
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-storage.js";
 import firebaseConfig from './firebaseConfig.js';
 
+const allowedExtensions = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'pdf', 'webp'];
 const inviteCode = 'MINGGU_BELAJAR';
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
 let startTime, intervalId, totalTime;
 
@@ -159,6 +162,52 @@ export async function queryAndDisplayData(val, dataContainer) {
   } catch (error) {
     console.error('Error getting documents: ', error);
   }
+}
+
+export async function uploadFile (fileSource, fileCreator, dataContainer) {
+    if (!fileSource || !fileCreator) {
+        dataContainer.innerText = 'Please provide a file and a name.';
+        return;
+    }
+    const fileExtension = fileSource.name.split('.').pop().toLowerCase();
+    if (!allowedExtensions.includes(fileExtension)) {
+        dataContainer.innerText = 'Invalid file type. Please upload a Word, Excel, PPT, or PDF file.';
+        return;
+    }
+
+    try {
+        const storageRef = ref(storage, `uploads/${fileSource.name}`);
+        const uploadTask = uploadBytesResumable(storageRef, fileSource);
+
+        uploadTask.on('state_changed',
+          (snapshot) => {
+            // Observe state change events such as progress, pause, and resume
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            console.log('Upload is ' + progress + '% done');
+          },
+          (error) => {
+            console.error('Upload failed', error);
+            dataContainer.innerText = 'Upload failed.';
+          },
+          async () => {
+            // Handle successful uploads on complete
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+
+            await addDoc(collection(db, inviteCode+'_UPLOAD'), {
+                  inviteCode,
+                  fileName: uploadTask.snapshot.ref.name,
+                  fileCreator: fileCreator,
+                  fileURL: downloadURL,
+                  timestamp: serverTimestamp()
+                });
+
+            dataContainer.innerText = 'Upload successful!';
+          }
+        );
+      } catch (error) {
+        console.error('Error uploading file:', error);
+        dataContainer.innerText = 'Error uploading file.';
+      }
 }
 
 

@@ -5,15 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Move-N-Size</title>
     <link rel="stylesheet" href="styles_header.css">
-    <script type="module">
-    import { queryAndDisplayData } from './util.js';
 
-    window.searchByName = async () => {
+    <script type="module">
+    import { uploadFile } from './util.js';
+
+    window.uploadFileInput = async () => {
       const nameInput = document.getElementById('name-input');
       const name = nameInput.value.trim();
       if (name) {
+        const fileSource = document.getElementById('file-input').files[0];
         const dataContainer = document.getElementById('data-container');
-        queryAndDisplayData(name, dataContainer);
+        uploadFile(fileSource, name, dataContainer);
       }
     }
 
@@ -22,7 +24,7 @@
 
 </head>
 <body>
-    <h1>History</span></h1>
+    <h1>Gallery</span></h1>
 
     <a href="index.html" class="home-link">Home</a>
 
@@ -31,7 +33,12 @@
         <input type="text" id="name-input" name="name">
     </div>
 
-    <a href="#" class="button-left" onclick="searchByName()" >Search</a>
+    <div class="form-group">
+        <label for="file-input">File:</label>
+        <input type="file" id="file-input" name="file">
+    </div>
+
+    <a href="#" class="button-left" onclick="uploadFileInput()" >Upload</a>
     <div id="data-container" class="table-container"></div>
 </body>
 </html>
