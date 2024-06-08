@@ -1,4 +1,4 @@
-function ClickingGame(canvasId, totalDuration, leftPhaseDuration, rightPhaseDuration) {
+function ClickingGame(canvasId, totalDuration, leftPhaseDuration, rightPhaseDuration, characterFile) {
   this.canvasId = canvasId;
   this.totalDuration = totalDuration;
   this.leftPhaseDuration = leftPhaseDuration;
@@ -9,12 +9,11 @@ function ClickingGame(canvasId, totalDuration, leftPhaseDuration, rightPhaseDura
   this.score = 0;
   this.timer = totalDuration;
   this.gameRunning = true;
-  this.circleSize = 120;
-  this.glowAmount = 0;
-  this.originalColor = null;
-  this.glowColor = null;
+  this.characterSize = 200;
+  this.characterImage = null;
   this.phase = 'LEFT'; // 'LEFT' or 'RIGHT'
   this.firstClick = false;
+  this.characterFile = characterFile;
 
   this.setup();
 }
@@ -28,13 +27,12 @@ ClickingGame.prototype.setup = function() {
     e.preventDefault();
   });
 
+  // Load character image
+  this.characterImage = loadImage('images/'+ this.characterFile + '.png');
+
   // Initialize target position
   this.targetX = width / 2;
-  this.targetY = height / 2 + 50;
-
-  // Define colors
-  this.originalColor = color(255, 69, 0); // Red color
-  this.glowColor = color(125, 0, 0, 100); // Yellow color with transparency
+  this.targetY = height / 2 + 70;
 };
 
 ClickingGame.prototype.startTimer = function() {
@@ -47,9 +45,8 @@ ClickingGame.prototype.startTimer = function() {
 ClickingGame.prototype.draw = function() {
   background(255, 228, 196); // Light orange background
 
-  // Update and draw the target circle
-  this.updateGlowEffect();
-  this.drawTarget();
+  // Draw the character
+  this.drawCharacter();
 
   // Display the timer and score
   textSize(32);
@@ -72,22 +69,22 @@ ClickingGame.prototype.draw = function() {
     text('RIGHT', width / 2 - 177, 150);
   }
   fill(0);
-  text('clicking inside the circle for ' + this.leftPhaseDuration + ' seconds', width / 2 + 66, 150);
+  text('clicking on the character for ' + this.leftPhaseDuration + ' seconds', width / 2 + 70, 150);
 
   if (!this.gameRunning) {
     textSize(32);
     fill(0); // Black text
     text('Finish!', width / 2, height / 2 + 35);
-    gameCompleted({'clicked':this.score})
+    gameCompleted({'clicked': this.score});
   }
 };
 
 ClickingGame.prototype.mousePressed = function() {
-  if (this.gameRunning && this.isInsideCircle(mouseX, mouseY, this.targetX, this.targetY, this.circleSize)) {
+  if (this.gameRunning && this.isInsideCharacter(mouseX, mouseY, this.targetX, this.targetY, this.characterSize)) {
     this.startTimer();
     if ((this.phase === 'LEFT' && mouseButton === LEFT) || (this.phase === 'RIGHT' && mouseButton === RIGHT)) {
       this.score++;
-      this.glowAmount = 20; // Start the glow effect
+      this.characterReact(); // Make the character react to clicks
     }
   }
 };
@@ -105,23 +102,19 @@ ClickingGame.prototype.decreaseTimer = function() {
   }
 };
 
-ClickingGame.prototype.updateGlowEffect = function() {
-  if (this.glowAmount > 0) {
-    this.glowAmount--;
-    noFill();
-    stroke(this.glowColor);
-    strokeWeight(8 - this.glowAmount / 2); // Decrease glow intensity over time
-    ellipse(this.targetX, this.targetY, this.circleSize + 10);
-  }
+ClickingGame.prototype.drawCharacter = function() {
+  image(this.characterImage, this.targetX - this.characterSize / 2, this.targetY - this.characterSize / 2, this.characterSize, this.characterSize);
 };
 
-ClickingGame.prototype.drawTarget = function() {
-  noStroke();
-  fill(this.originalColor);
-  ellipse(this.targetX, this.targetY, this.circleSize);
-};
-
-ClickingGame.prototype.isInsideCircle = function(px, py, cx, cy, diameter) {
+ClickingGame.prototype.isInsideCharacter = function(px, py, cx, cy, size) {
   var d = dist(px, py, cx, cy);
-  return d < diameter / 2;
+  return d < size / 2;
+};
+
+ClickingGame.prototype.characterReact = function() {
+  // Add simple animation or reaction for the character
+  this.characterSize = 240; // Temporarily increase the size
+  setTimeout(() => {
+    this.characterSize = 200; // Reset to original size
+  }, 100);
 };
