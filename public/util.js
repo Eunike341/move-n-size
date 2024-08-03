@@ -54,6 +54,7 @@ export async function submitTimeToFirestore(level, name, playType) {
 }
 
 export async function submitScoreToFirestore(level, name, score, playType) {
+  //console.log("values level:" + level + ", name:" + name + ", score:" + JSON.stringify(score) + ", playType:" + playType);
   const ipAddress = await fetchIpAddress();
   try {
     await addDoc(collection(db, inviteCode), {
@@ -197,7 +198,7 @@ export async function calculateUserScores(dataContainer) {
     // Group data by user
     Object.keys(data).forEach(userName => {
         const userEntries = data[userName];
-        const groupedScores = { clicks: {}, placement: {} };
+        const groupedScores = { clicks: {}, placement: {}, typing: {} };
 
         // Group scores by playType and level for each user
         userEntries.forEach(entry => {
@@ -222,6 +223,8 @@ export async function calculateUserScores(dataContainer) {
                 }
                 score = divider / entry.score.time;
                 score *= PLACEMENT_MULTIPLIER;
+            } else if (entry.playType === "typing") {
+                score = entry.score.typing/ 30 * 600;
             }
 
             groupedScores[entry.playType][key].push(score);
@@ -231,6 +234,8 @@ export async function calculateUserScores(dataContainer) {
         let totalClicksWeight = 0;
         let totalPlacementScore = 0;
         let totalPlacementWeight = 0;
+        let totalTypingScore = 0;
+        let totalTypingWeight = 0;
 
         // Calculate average score for each group and apply weighting by level for each user
         Object.keys(groupedScores.clicks).forEach(key => {
@@ -255,22 +260,35 @@ export async function calculateUserScores(dataContainer) {
             }
         });
 
+        Object.keys(groupedScores.typing).forEach(key => {
+            const scores = groupedScores.typing[key];
+            const averageScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+            const level = parseInt(key.split('_')[1], 10);
+
+            if (level <= 1) {
+                totalTypingScore += averageScore * level;
+                totalTypingWeight += level;
+            }
+        });
+
         // Calculate final scores without normalization
         const finalClicksScore = totalClicksWeight > 0 ? totalClicksScore : 0;
         const finalPlacementScore = totalPlacementWeight > 0 ? totalPlacementScore : 0;
+        const finalTypingScore = totalTypingWeight > 0 ? totalTypingScore : 0;
 
         // Combine scores if desired, or keep them separate for different analysis
         users[userName] = {
-            totalScore: finalClicksScore + finalPlacementScore,
+            totalScore: finalClicksScore + finalPlacementScore + finalTypingScore,
             clicksScore: finalClicksScore,
-            placementScore: finalPlacementScore
+            placementScore: finalPlacementScore,
+            typingScore: finalTypingScore
         };
     });
 
     // Convert the users object to an array and sort it by score in descending order
     const sortedUsers = Object.entries(users)
         .map(([name, score]) => ({ name, score }))
-        .sort((a, b) => b.score - a.score);
+        .sort((a, b) => b.score.totalScore - a.score.totalScore);
 
    dataContainer.innerHTML = JSON.stringify(sortedUsers);
   } catch (error) {
