@@ -55,6 +55,7 @@ export async function submitTimeToFirestore(level, name, playType) {
 
 export async function submitScoreToFirestore(level, name, score, playType) {
   //console.log("values level:" + level + ", name:" + name + ", score:" + JSON.stringify(score) + ", playType:" + playType);
+  name = name.toUpperCase();
   const ipAddress = await fetchIpAddress();
   try {
     await addDoc(collection(db, inviteCode), {
@@ -74,6 +75,7 @@ export async function submitScoreToFirestore(level, name, score, playType) {
 
 export async function queryAndDisplayData(val, dataContainer) {
   try {
+    val = val.toUpperCase();
     // Get the start and end of today's date
     const today = new Date();
     today.setHours(0, 0, 0, 0); // Start of today
