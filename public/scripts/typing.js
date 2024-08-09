@@ -1,15 +1,15 @@
 const statements = [
     "Saya pergi ke pasar untuk membeli jeruk dan sayuran",
     "The quick brown fox jumps over the lazy dog",
-    "Malware adalah program komputer yang merusak (e.g. spyware)",
-    "Stay focused and keep typing",
+    "Alizasri Yati, Ni Nengah Tarwi, dan Niluh belajar bersama",
+    "Eva and Lina stay focused and keep on typing",
     "Phishing adalah website palsu (e.g. klikbca.com vs kilkbca.com",
     "Practice makes perfect",
-    "Zebra pergi ke luar rumah pada jam tiga sore dengan cepat",
-    "Hello World",
+    "Yani dan Rifah pergi ke luar rumah pada jam tiga sore dengan cepat",
+    "Hello, Oky and Yani",
     "Internet adalah koneksi dari jutaan komputer di seluruh dunia",
     "A picture is worth a thousand words",
-    "Vania membeli jus dan quiche di kafe yang ramai dan lezat",
+    "Siti Saunah dan Erny membeli jus dan quiche di kafe yang ramai dan lezat",
     "Time is money",
     "Impian besar dimulai dari langkah kecil",
     "No pain, no gain",
@@ -24,7 +24,7 @@ const statements = [
 
 let currentIndex = 0;
 let score = 0;
-let timeLeft = 300;
+let timeLeft = 420;
 let timer;
 
 const statementDiv = document.getElementById('statement');
@@ -36,7 +36,7 @@ const timeDiv = document.getElementById('time');
 function startGame() {
     score = 0;
     currentIndex = 0;
-    timeLeft = 300;
+    timeLeft = 420;
     startButton.disabled = true;
     inputBox.disabled = false;
     inputBox.value = "";

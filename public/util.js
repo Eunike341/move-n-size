@@ -165,22 +165,23 @@ export async function queryAndDisplayData(val, dataContainer) {
 }
 
 
-export async function calculateUserScores(dataContainer) {
+export async function calculateUserScores(selectedDate) {
   try {
+    console.log("====received selectedDate:" + selectedDate);
+    const day = selectedDate;
+    day.setHours(0, 0, 0, 0); // Start of day
+    const startOfDay = day.getTime();
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Start of today
-    const startOfDay = today.getTime();
+    day.setHours(23, 59, 59, 999); // End of day
+    const endOfDay = day.getTime();
 
-    today.setHours(23, 59, 59, 999); // End of today
-    const endOfDay = today.getTime();
+    console.log("===startdate:" + startOfDay+", enddate:" + endOfDay);
 
     const q = query(collection(db, inviteCode),
         where("timestamp", ">=", new Date(startOfDay)),
         where("timestamp", "<=", new Date(endOfDay)));
 
     const querySnapshot = await getDocs(q);
-    dataContainer.innerHTML = ''; // Clear previous results
 
     const data = {};
     querySnapshot.forEach((doc) => {
@@ -292,7 +293,7 @@ export async function calculateUserScores(dataContainer) {
         .map(([name, score]) => ({ name, score }))
         .sort((a, b) => b.score.totalScore - a.score.totalScore);
 
-   dataContainer.innerHTML = JSON.stringify(sortedUsers);
+    return sortedUsers;
   } catch (error) {
     console.error('Error calculating overall score:', error);
   }

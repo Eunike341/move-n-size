@@ -5,56 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Move-N-Size</title>
     <link rel="stylesheet" href="styles_header.css">
+    <link rel="stylesheet" href="styles_tables.css">
 
-    <style>
-        .table-container {
-          width: 90%;
-          overflow-x: auto;
-          margin-top: 20px;
-        }
-
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          margin: 20px 0;
-          font-size: 1em;
-          font-family: Arial, sans-serif;
-          box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-          border-radius: 10px;
-          overflow: hidden;
-        }
-
-        table thead tr {
-          background-color: #4CAF50;
-          color: #ffffff;
-          text-align: left;
-          font-weight: bold;
-        }
-
-        table th,
-        table td {
-          padding: 12px 15px;
-          border: 1px solid #ddd;
-        }
-
-        table tbody tr {
-          border-bottom: 1px solid #ddd;
-        }
-
-        table tbody tr:nth-of-type(even) {
-          background-color: #f3f3f3;
-        }
-
-        table tbody tr:last-of-type {
-          border-bottom: 2px solid #4CAF50;
-        }
-
-        table tbody tr:hover {
-          background-color: #f1f1f1;
-        }
-
-
-    </style>
 
     <script type="module">
     import { queryAndDisplayData } from './util.js';

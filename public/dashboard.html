@@ -5,14 +5,78 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Move-N-Size</title>
     <link rel="stylesheet" href="styles_header.css">
-
+    <link rel="stylesheet" href="styles_tables.css">
 
     <script type="module">
     import { calculateUserScores } from './util.js';
 
     window.searchByName = async () => {
+      const datePicker = document.getElementById('datePicker');
+      var selectedDate = datePicker.value;
+
+      if (selectedDate == '') {
+        const today = new Date().toISOString().split('T')[0];
+        selectedDate = today;
+      }
+
       const dataContainer = document.getElementById('data-container');
-      calculateUserScores(dataContainer);
+      const results = await calculateUserScores(new Date(selectedDate));
+      console.log(JSON.stringify(results));
+      dataContainer.innerHTML = '';
+      displayResults(dataContainer, results);
+    }
+
+    function displayResults (dataContainer, results) {
+
+        const table = document.createElement('table');
+        const thead = document.createElement('thead');
+        const tbody = document.createElement('tbody');
+        const headerRow = document.createElement('tr');
+
+        // Create table headers
+        const headers = ['Name', 'Total Score', 'Click Score', 'Typing Score', 'Placement Score'];
+        headers.forEach(headerText => {
+          const th = document.createElement('th');
+          th.textContent = headerText;
+          headerRow.appendChild(th);
+        });
+
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        const showTest = document.getElementById('showTest');
+
+        results.forEach(item => {
+            if (!item.name.toUpperCase().startsWith('TEST') || showTest.checked) {
+                const row = document.createElement('tr');
+
+                const tdName = document.createElement('td');
+                tdName.textContent = item.name;
+                row.appendChild(tdName);
+
+                const tdTotal = document.createElement('td');
+                tdTotal.textContent = item.score.totalScore;
+                row.appendChild(tdTotal);
+
+                const tdClick = document.createElement('td');
+                tdClick.textContent = item.score.clicksScore;
+                row.appendChild(tdClick);
+
+                const tdType = document.createElement('td');
+                tdType.textContent = item.score.typingScore;
+                row.appendChild(tdType);
+
+                const tdPlace = document.createElement('td');
+                tdPlace.textContent = item.score.placementScore;
+                row.appendChild(tdPlace);
+
+                table.appendChild(row);
+            }
+
+        });
+
+        dataContainer.append(table);
+
     }
 
   </script>
@@ -24,7 +88,14 @@
 
     <a href="index.html" class="home-link">Home</a>
 
+    <div class="form-group">
+        <label for="datePicker">Select a date:</label>
+        <input type="date" id="datePicker" name="datePicker">
+    </div>
+
     <a href="#" class="button-left" onclick="searchByName()" >Search</a>
+    <input type="checkbox" name="showTest" id="showTest"/>
+
     <div id="data-container" class="table-container"></div>
 </body>
 </html>
