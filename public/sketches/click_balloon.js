@@ -1,34 +1,44 @@
 let balloons = [];
 let score = 0;
-let timer = 5;
-//let startTime;
+let timer = 45;
 let gameRunning = true;
 let timerStarted = false;
 
+let leftBalloonImage, rightBalloonImage, doubleBalloonImage;
+
+function preload() {
+  leftBalloonImage = loadImage('images/balloon_left.png');
+  rightBalloonImage = loadImage('images/balloon_right.png');
+  doubleBalloonImage = loadImage('images/balloon_double.png');
+}
+
 function setup() {
-  createCanvas(800, 600);
+  createCanvas(800, 400);
   startTime = millis();
 
   // Disable the context menu on right-click
     document.addEventListener('contextmenu', event => event.preventDefault());
 
   // Create initial balloons
-  for (let i = 0; i < 5; i++) {
-    balloons.push(new Balloon(random(100, width - 100), height + random(100, 200)));
+  for (let i = 0; i < 7; i++) {
+    let widthRange = random(70, width - 390);
+    if (i%2===0) {
+      widthRange = random(400, width - 100);
+    }
+    balloons.push(new Balloon(widthRange, height + random(100, 200)));
   }
+}
+
+function createBalloon() {
+  let widthRange = random(20, width - 390);
+  if (i%2===0) {
+    widthRange = random(410, width - 100);
+  }
+  return new Balloon(widthRange, height + random(100, 200));
 }
 
 function draw() {
   background(255, 228, 196);
-
-  // Check if time is up
-  //if (millis() - startTime > timer) {
-  //  textSize(32);
-   // fill(0);
-    //text("Time's up! Final Score: " + score, width / 2 - 100, height / 2);
-    //noLoop(); // Stop the game loop
-    //return;
-  //}
 
   // Draw and update balloons
   for (let i = balloons.length - 1; i >= 0; i--) {
@@ -36,7 +46,11 @@ function draw() {
     balloons[i].show();
     if (balloons[i].popped || balloons[i].y < -balloons[i].r) {
       balloons.splice(i, 1); // Remove popped balloons or balloons that moved out of the screen
-      balloons.push(new Balloon(random(100, width - 100), height + random(100, 200))); // Add new balloon at the bottom
+      let widthRange = random(70, width - 390);
+          if (i%2===0) {
+            widthRange = random(400, width - 100);
+          }
+          balloons.push(new Balloon(widthRange, height + random(100, 200)));
     }
   }
 
@@ -80,10 +94,10 @@ function mousePressed() {
     if (balloon.isClicked(mouseX, mouseY)) {
       if (mouseButton === LEFT && balloon.popType === 'left') {
         balloon.pop();
-        score += 10;
+        score += 5;
       } else if (mouseButton === RIGHT && balloon.popType === 'right') {
         balloon.pop();
-        score += 20;
+        score += 5;
       }
     }
   }
@@ -93,7 +107,7 @@ function doubleClicked() {
   for (let balloon of balloons) {
     if (balloon.isClicked(mouseX, mouseY) && balloon.popType === 'double') {
       balloon.pop();
-      score += 50;
+      score += 8;
     }
   }
 }
@@ -111,11 +125,11 @@ class Balloon {
     this.popType = random(popTypes);
 
     if (this.popType === 'left') {
-      this.color = color(0, 255, 0); // Green for left click
+      this.image = leftBalloonImage;
     } else if (this.popType === 'right') {
-      this.color = color(0, 0, 255); // Blue for right click
+      this.image = rightBalloonImage;
     } else if (this.popType === 'double') {
-      this.color = color(255, 0, 0); // Red for double click
+      this.image = doubleBalloonImage;
     }
   }
 
@@ -125,12 +139,17 @@ class Balloon {
 
   show() {
     if (!this.popped) {
-      fill(this.color);
-      ellipse(this.x, this.y, this.r * 2);
 
-      // Draw the text inside the balloon
+      if (this.popType === 'left') {
+        image(this.image, this.x - this.r, this.y - this.r, this.r * 2, this.r * 2 + 50);
+      } else if (this.popType === 'right') {
+        image(this.image, this.x - this.r, this.y - this.r, this.r * 2, this.r * 2 + 45);
+      } else if (this.popType === 'double') {
+        image(this.image, this.x - this.r, this.y - this.r, this.r * 2, this.r * 2 + 60);
+
+      }
       fill(255);
-      textSize(16);
+      textSize(14);
       textAlign(CENTER, CENTER);
       text(this.popType.toUpperCase(), this.x, this.y);
     }
