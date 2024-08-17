@@ -25,7 +25,7 @@ function setup() {
 }
 
 function draw() {
-  background(255, 228, 196); // Light orange background
+  background(255, 240, 235); // Light orange background
 
   // Draw the mouse with vibrant left and right buttons
   drawMouse();

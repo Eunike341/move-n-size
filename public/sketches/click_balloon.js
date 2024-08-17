@@ -38,7 +38,7 @@ function createBalloon() {
 }
 
 function draw() {
-  background(255, 228, 196);
+  background(255, 240, 235);
 
   // Draw and update balloons
   for (let i = balloons.length - 1; i >= 0; i--) {
@@ -61,9 +61,12 @@ function draw() {
   text('Time: ' + timer, width / 2, 50);
 
   // Display score
-  textSize(24);
+  textSize(20);
   fill(0);
-  text("Score: " + score, 100, 100);
+  textAlign(LEFT, CENTER)
+  text("LEFT/ RIGHT/ DOUBLE click on the balloons", 20, 90, 500);
+  text("Score: " + score, 20, 120, 500);
+
 
   if (!gameRunning) {
     textSize(32);
