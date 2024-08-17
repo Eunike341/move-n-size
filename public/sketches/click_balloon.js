@@ -70,7 +70,7 @@ function draw() {
     fill(0); // Black text
     text('Finish!', width / 2, height / 2);
     noLoop();
-    gameCompleted({'score':score})
+    gameCompleted({'clicked':score})
   }
 }
 
@@ -94,10 +94,10 @@ function mousePressed() {
     if (balloon.isClicked(mouseX, mouseY)) {
       if (mouseButton === LEFT && balloon.popType === 'left') {
         balloon.pop();
-        score += 5;
+        score += 2;
       } else if (mouseButton === RIGHT && balloon.popType === 'right') {
         balloon.pop();
-        score += 5;
+        score += 2;
       }
     }
   }
@@ -107,7 +107,7 @@ function doubleClicked() {
   for (let balloon of balloons) {
     if (balloon.isClicked(mouseX, mouseY) && balloon.popType === 'double') {
       balloon.pop();
-      score += 8;
+      score += 3;
     }
   }
 }
