@@ -12,12 +12,12 @@
     import { getQueryParam, submitScoreToFirestore } from './util.js';
 
     const level = getQueryParam('level');
-    let scriptName = 'left_right';
+    let scriptName = 'click_short';
     if (level) {
       if (level==2) {
-        scriptName = 'click_short';
-      } else if (level==3) {
         scriptName = 'click_long';
+      } else if (level==3) {
+        scriptName = 'click_balloon';
       } else if (level==4) {
         scriptName = 'click_moving_target';
       }
