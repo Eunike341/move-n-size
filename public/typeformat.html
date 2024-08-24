@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Formatting Simulator</title>
+    <style>
+        .container {
+            display: flex;
+            justify-content: space-between;
+        }
+        .panel {
+            width: 48%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+        .instruction-message {
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        .highlight {
+            background-color: yellow;
+        }
+    </style>
+    <script src="scripts/typeformat.js"></script>
+</head>
+<body>
+<div class="instruction-message">
+    Follow the format on the left using keyboard shortcuts:
+    <strong>Ctrl+B</strong> to bold,
+    <strong>Ctrl+I</strong> to italicize, and
+    <strong>Ctrl+U</strong> to underline.
+</div>
+
+<div class="container">
+    <!-- Example Panel -->
+    <div class="panel">
+        <h3>Formatted Example</h3>
+        <div id="formatted-example">
+            <!-- Example formatted text will go here -->
+        </div>
+    </div>
+
+    <!-- User Panel -->
+    <div class="panel">
+        <h3>Your Formatting</h3>
+        <div class="editable" contenteditable="true"></div>
+        <button onclick="checkFormatting()">Check Formatting</button>
+    </div>
+</div>
+
+
+</body>
+</html>
