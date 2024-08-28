@@ -37,7 +37,56 @@ const exercises = [
             return underlineCheck && boldCheck;
         }
     },
-    // Add more exercises as needed
+    {
+        instruction: "Bold the words 'Britain and Zanzibar' and '38 minutes'.",
+        exampleText: 'The shortest war in history was between <b>Britain and Zanzibar</b> that lasted just <b>38 minutes</b>. Blink and you missed it!',
+        userText: 'The shortest war in history was between <span class="highlight bold-word-1">Britain and Zanzibar</span> that lasted just <span class="highlight bold-word-2">38 minutes</span>. Blink and you missed it!',
+        formatCheck: function() {
+            const boldElement1 = document.querySelector('.bold-word-1');
+            const boldElement2 = document.querySelector('.bold-word-2');
+            const boldCheck1 = checkStyle(boldElement1, 'fontWeight', '700') || checkStyle(boldElement1, 'fontWeight', 'bold');
+            const boldCheck2 = checkStyle(boldElement2, 'fontWeight', '700') || checkStyle(boldElement, 'fontWeight', 'bold');
+            return boldCheck1 && boldCheck2;
+        }
+    },
+    {
+        instruction: "Bold the words 'Ray Tomlinson' and '1971'.",
+        exampleText: 'The first email was sent by <b>Ray Tomlinson</b> to himself in <b>1971</b>',
+        userText: 'The first email was sent by <span class="highlight bold-word-1">Ray Tomlinson</span> to himself in <span class="highlight bold-word-2">1971</span>.',
+        formatCheck: function() {
+            const boldElement1 = document.querySelector('.bold-word-1');
+            const boldElement2 = document.querySelector('.bold-word-2');
+            const boldCheck1 = checkStyle(boldElement1, 'fontWeight', '700') || checkStyle(boldElement1, 'fontWeight', 'bold');
+            const boldCheck2 = checkStyle(boldElement2, 'fontWeight', '700') || checkStyle(boldElement, 'fontWeight', 'bold');
+            return boldCheck1 && boldCheck2;
+        }
+    },
+    {
+        instruction: "Bold the word 'Creeper' and italicize 'I’m the creeper, catch me if you can!'.",
+        exampleText: 'The first computer virus, <b>Creeper</b>, was created in 1971 as an experiment. It simply displayed the message: "<i>I’m the creeper, catch me if you can!</i>"',
+        userText: 'The first computer virus, <span class="highlight bold-word-1">Creeper</span>, was created in 1971 as an experiment. It simply displayed the message: "<span class="highlight style-word-2">I’m the creeper, catch me if you can</span>".',
+        formatCheck: function() {
+            const boldElement1 = document.querySelector('.bold-word-1');
+            const styleElement2 = document.querySelector('.style-word-2');
+            const boldCheck1 = checkStyle(boldElement1, 'fontWeight', '700') || checkStyle(boldElement1, 'fontWeight', 'bold');
+            const styleCheck2 = checkStyle(styleElement2, 'fontStyle', 'italic');
+            return boldCheck1 && styleCheck2;
+        }
+    },
+    {
+        instruction: "Underline the words 'Word', 'PowerPoint', and 'Excel'.",
+        exampleText: 'Some of Microsoft’s programs are <u>Word</u>, <u>PowerPoint</u>, and <u>Excel</u>',
+        userText: 'Some of Microsoft’s programs are <span class="highlight style-word-1">Word</span>, <span class="highlight style-word-2">PowerPoint</span>, and <span class="highlight style-word-3">Excel</span>.',
+        formatCheck: function() {
+            const styleElement1 = document.querySelector('.style-word-1');
+            const styleElement2 = document.querySelector('.style-word-2');
+            const styleElement3 = document.querySelector('.style-word-3');
+            const styleCheck1 = checkStyle(styleElement1, 'textDecorationLine', 'underline');
+            const styleCheck2 = checkStyle(styleElement2, 'textDecorationLine', 'underline');
+            const styleCheck3 = checkStyle(styleElement3, 'textDecorationLine', 'underline');
+            return styleCheck1 && styleCheck2 && styleCheck3;
+        }
+    },
 ];
 
 let currentExerciseIndex = 0;
