@@ -1,3 +1,27 @@
+let startTime;
+let timerInterval;
+
+function startTimer() {
+    startTime = new Date(); // Record the start time
+    document.getElementById('startButton').disabled = true; // Disable the start button
+
+    timerInterval = setInterval(updateTimerDisplay, 1000);
+
+    loadExercise(currentExerciseIndex); // Load the first exercise
+}
+
+function updateTimerDisplay() {
+    const currentTime = new Date();
+    const elapsedSeconds = Math.floor((currentTime - startTime) / 1000); // Calculate elapsed time in seconds
+    document.getElementById('score').innerText = `Time: ${elapsedSeconds}`;
+}
+
+function stopTimer() {
+    clearInterval(timerInterval); // Stop updating the timer
+    const finalTime = (new Date() - startTime) / 1000; // Calculate final elapsed time in seconds
+    return finalTime;
+}
+
 function checkStyle(element, styleProperty, expectedValue) {
     const formattingElement = element.firstChild;
 
@@ -101,7 +125,8 @@ function checkFormatting() {
     const exercise = exercises[currentExerciseIndex];
 
     if (exercise.formatCheck()) {
-        alert('Correct! You formatted the text correctly.');
+        elapsedTime = (new Date() - startTime) / 1000;
+        //alert('Correct! You formatted the text correctly.');
         nextExercise();
     } else {
         alert('Try again. You need to format the text correctly.');
@@ -113,10 +138,44 @@ function nextExercise() {
     if (currentExerciseIndex < exercises.length) {
         loadExercise(currentExerciseIndex);
     } else {
-        alert('Congratulations! You have completed all the exercises.');
+        const finalTime = stopTimer();
+        alert(`Congratulations! You have completed all the exercises in ${finalTime.toFixed(0)} seconds.`);
+        document.getElementById('score').innerText = `Completed in ${finalTime.toFixed(0)} seconds.`;
+        window.gameCompleted({'time': finalTime.toFixed(0)});
     }
 }
 
+// Restrict keyboard input to only allow Ctrl+B, Ctrl+I, and Ctrl+U
+function restrictKeys(event) {
+    const isCtrl = event.ctrlKey || event.metaKey;
+    const allowedKeys = ['b', 'i', 'u'];
+    const navigationKeys = [
+        'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+        'Shift', 'Alt', 'Tab', 'Home', 'End', 'PageUp', 'PageDown'
+    ];
+
+    // If Ctrl is held down and one of the allowed keys is pressed, allow it
+    if (isCtrl && allowedKeys.includes(event.key.toLowerCase())) {
+        return;
+    }
+
+    // Allow navigation keys
+    if (navigationKeys.includes(event.key)) {
+        return;
+    }
+
+    // Otherwise, prevent the default action
+    event.preventDefault();
+}
+
+// Attach the keydown event to restrict input in the editable area
+function enableKeyRestrictions() {
+    const editableArea = document.querySelector('.editable');
+    editableArea.addEventListener('keydown', restrictKeys);
+}
+
 window.onload = function() {
-    loadExercise(currentExerciseIndex);
+    //loadExercise(currentExerciseIndex);
+    document.getElementById('startButton').addEventListener('click', startTimer);
+    enableKeyRestrictions();
 };

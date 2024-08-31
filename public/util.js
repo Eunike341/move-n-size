@@ -227,7 +227,12 @@ export async function calculateUserScores(selectedDate) {
                 score = divider / entry.score.time;
                 score *= PLACEMENT_MULTIPLIER;
             } else if (entry.playType === "typing") {
-                score = entry.score.typing/ 30 * 600;
+                if (entry.score.typing !== undefined) {
+                    score = entry.score.typing/ 30 * 600;
+                } else if (entry.score.time !== undefined) {
+                    score = 30 / entry.score.time * 400;
+                }
+
             }
 
             groupedScores[entry.playType][key].push(score);
@@ -243,33 +248,36 @@ export async function calculateUserScores(selectedDate) {
         // Calculate average score for each group and apply weighting by level for each user
         Object.keys(groupedScores.clicks).forEach(key => {
             const scores = groupedScores.clicks[key];
-            const averageScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+            //const averageScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+            const useScore = Math.max(...scores);
             const level = parseInt(key.split('_')[1], 10);
 
             if (level <= CLICK_LEVEL_CAP) {
-                totalClicksScore += averageScore * level;
+                totalClicksScore += useScore * level;
                 totalClicksWeight += level;
             }
         });
 
         Object.keys(groupedScores.placement).forEach(key => {
             const scores = groupedScores.placement[key];
-            const averageScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+            //const averageScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+            const useScore = Math.max(...scores);
             const level = parseInt(key.split('_')[1], 10);
 
             if (level <= PLACEMENT_LEVEL_CAP) {
-                totalPlacementScore += averageScore * level;
+                totalPlacementScore += useScore * level;
                 totalPlacementWeight += level;
             }
         });
 
         Object.keys(groupedScores.typing).forEach(key => {
             const scores = groupedScores.typing[key];
-            const averageScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+            //const averageScore = scores.reduce((a, b) => a + b, 0) / scores.length;
+            const useScore = Math.max(...scores);
             const level = parseInt(key.split('_')[1], 10);
 
-            if (level <= 1) {
-                totalTypingScore += averageScore * level;
+            if (level <= 2) {
+                totalTypingScore += useScore ;
                 totalTypingWeight += level;
             }
         });
