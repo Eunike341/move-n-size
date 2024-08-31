@@ -151,11 +151,19 @@ function restrictKeys(event) {
     const allowedKeys = ['b', 'i', 'u'];
     const navigationKeys = [
         'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
-        'Shift', 'Alt', 'Tab', 'Home', 'End', 'PageUp', 'PageDown'
+        'Shift', 'Alt', 'Tab', 'Home', 'End'
     ];
 
     // If Ctrl is held down and one of the allowed keys is pressed, allow it
     if (isCtrl && allowedKeys.includes(event.key.toLowerCase())) {
+        event.preventDefault();
+        if (event.key.toLowerCase() == 'b') {
+            document.execCommand('bold', false, null);
+        } else if (event.key.toLowerCase() == 'i') {
+           document.execCommand('italic', false, null);
+        } else if (event.key.toLowerCase() == 'u') {
+          document.execCommand('underline', false, null);
+        }
         return;
     }
 
