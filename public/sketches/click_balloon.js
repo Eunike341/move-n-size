@@ -19,6 +19,8 @@ function setup() {
   // Disable the context menu on right-click
     document.addEventListener('contextmenu', event => event.preventDefault());
 
+    canvas.addEventListener('dblclick', handleDoubleClick);
+
   // Create initial balloons
   for (let i = 0; i < 7; i++) {
     let widthRange = random(70, width - 390);
@@ -27,14 +29,6 @@ function setup() {
     }
     balloons.push(new Balloon(widthRange, height + random(100, 200)));
   }
-}
-
-function createBalloon() {
-  let widthRange = random(20, width - 390);
-  if (i%2===0) {
-    widthRange = random(410, width - 100);
-  }
-  return new Balloon(widthRange, height + random(100, 200));
 }
 
 function draw() {
@@ -47,10 +41,10 @@ function draw() {
     if (balloons[i].popped || balloons[i].y < -balloons[i].r) {
       balloons.splice(i, 1); // Remove popped balloons or balloons that moved out of the screen
       let widthRange = random(70, width - 390);
-          if (i%2===0) {
-            widthRange = random(400, width - 100);
-          }
-          balloons.push(new Balloon(widthRange, height + random(100, 200)));
+      if (i%2===0) {
+        widthRange = random(400, width - 100);
+      }
+      balloons.push(new Balloon(widthRange, height + random(100, 200)));
     }
   }
 
@@ -106,7 +100,7 @@ function mousePressed() {
   }
 }
 
-function doubleClicked() {
+function handleDoubleClick(event) {
   for (let balloon of balloons) {
     if (balloon.isClicked(mouseX, mouseY) && balloon.popType === 'double') {
       balloon.pop();
@@ -114,6 +108,7 @@ function doubleClicked() {
     }
   }
 }
+
 
 class Balloon {
   constructor(x, y) {
