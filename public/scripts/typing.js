@@ -1,9 +1,12 @@
 const statements = [
+    "abcd efgh ijkl mnop qrst uvwx yz",
+    "ABCD EFGH IJKL MNOP QRST UVWX YZ",
+    "Next: 12345 67890 !@#$%^ &*() -_+= [] {} ; , . / ?",
     "Saya pergi ke pasar untuk membeli jeruk dan sayuran",
     "The quick brown fox jumps over the lazy dog",
     "Malware adalah program komputer yang merusak (e.g. spyware)",
     "Stay focused and keep typing",
-    "Phishing adalah website palsu (e.g. klikbca.com vs kilkbca.com",
+    "Phishing adalah website palsu (e.g. klikbca.com vs kilkbca.com)",
     "Practice makes perfect",
     "Zebra pergi ke luar rumah pada jam tiga sore dengan cepat",
     "Hello World",

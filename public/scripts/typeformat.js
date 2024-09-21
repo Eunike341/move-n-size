@@ -88,7 +88,7 @@ const exercises = [
     {
         instruction: "Bold the word 'Creeper' and italicize 'I’m the creeper, catch me if you can!'.",
         exampleText: 'The first computer virus, <b>Creeper</b>, was created in 1971 as an experiment. It simply displayed the message: "<i>I’m the creeper, catch me if you can!</i>"',
-        userText: 'The first computer virus, <span class="highlight bold-word-1">Creeper</span>, was created in 1971 as an experiment. It simply displayed the message: "<span class="highlight style-word-2">I’m the creeper, catch me if you can</span>".',
+        userText: 'The first computer virus, <span class="highlight bold-word-1">Creeper</span>, was created in 1971 as an experiment. It simply displayed the message: "<span class="highlight style-word-2">I’m the creeper, catch me if you can!</span>".',
         formatCheck: function() {
             const boldElement1 = document.querySelector('.bold-word-1');
             const styleElement2 = document.querySelector('.style-word-2');

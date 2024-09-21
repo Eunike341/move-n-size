@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Move-N-Size</title>
+    <link rel="stylesheet" href="styles_header.css">
+    <style>
+        .container {
+            display: flex;
+            justify-content: space-between;
+        }
+        .panel {
+            width: 48%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+        .instruction-message {
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+        .highlight {
+            background-color: yellow;
+        }
+        #statement {
+            font-size: 24px;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        #score, #time {
+            font-size: 24px;
+            margin-top: 20px;
+        }
+    </style>
+    <script src="scripts/typecopy.js"></script>
+
+    <script type="module">
+    import { getQueryParam, submitScoreToFirestore } from './util.js';
+
+    window.gameCompleted = async (scoreObj) => {
+      const name = document.getElementById('name').value;
+      submitScoreToFirestore(3, name, scoreObj, 'typing');
+    }
+
+  </script>
+
+</head>
+<body>
+<a href="index.html" class="home-link">Home</a>
+
+<div class="form-group">
+    <label for="name">Name:</label>
+    <input type="text" id="name" name="name">
+</div>
+<div class="instruction-message">
+    Copy the statement from left to right with either Ctrl+C/V or Right Click + Copy/Paste
+</div>
+
+<div id="statement">Press Start to Begin</div>
+
+<div class="container">
+    <!-- Example Panel -->
+    <div class="panel">
+        <h3>Copy this</h3>
+        <div id="formatted-example">
+        </div>
+    </div>
+
+    <!-- User Panel -->
+    <div class="panel">
+        <h3>Paste here</h3>
+        <div class="editable" contenteditable="true" style="border: 2px solid #000;"></div>
+        <button onclick="checkFormatting()" class="button-left">Check Copy Paste</button>
+    </div>
+</div>
+
+<div style="margin-bottom: 10px">
+    <button id="startButton" class="button-left">Start</button>
+</div>
+
+<div id="score"></div>
+
+
+</body>
+</html>

@@ -276,7 +276,7 @@ export async function calculateUserScores(selectedDate) {
             const useScore = Math.max(...scores);
             const level = parseInt(key.split('_')[1], 10);
 
-            if (level <= 2) {
+            if (level <= 3) {
                 totalTypingScore += useScore ;
                 totalTypingWeight += level;
             }
