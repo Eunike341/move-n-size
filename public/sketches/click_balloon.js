@@ -105,7 +105,7 @@ function mousePressed() {
 function handleDoubleClick(event) {
   console.log('double clicked');
   for (let balloon of balloons) {
-    if (balloon.isClicked(mouseX, mouseY) && balloon.popType === 'double') {
+    if ( balloon.popType === 'double' && balloon.isClicked(mouseX, mouseY) ) {
       console.log('double clicked popped');
       balloon.pop();
       score += 3;
@@ -159,9 +159,23 @@ class Balloon {
   }
 
   isClicked(px, py) {
-    let d = dist(px, py, this.x, this.y);
-    return d < this.r;
+    let imageWidth = this.r * 2; // The width of the balloon image
+    let imageHeight;
+
+    // Set height based on the balloon type
+    if (this.popType === 'left') {
+      imageHeight = this.r * 2 + 50;
+    } else if (this.popType === 'right') {
+      imageHeight = this.r * 2 + 45;
+    } else if (this.popType === 'double') {
+      imageHeight = this.r * 2 + 60;
+    }
+
+    // Check if the click is inside the rectangular bounds of the image
+    return px >= (this.x - this.r) && px <= (this.x - this.r + imageWidth) &&
+           py >= (this.y - this.r) && py <= (this.y - this.r + imageHeight);
   }
+
 
   pop() {
     this.popped = true;
