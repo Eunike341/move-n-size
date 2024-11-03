@@ -1,7 +1,7 @@
 var game;
 
 function setup() {
-  game = new ClickingGame('gameContainer', 40, 20, 20, 'fabble2');
+  game = new ClickingGame('gameContainer', 30, 15, 15, 'fabble2');
 }
 
 function draw() {
