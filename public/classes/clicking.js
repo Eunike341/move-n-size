@@ -72,9 +72,11 @@ ClickingGame.prototype.draw = function() {
   text('clicking on the character for ' + this.leftPhaseDuration + ' seconds', width / 2 + 70, 150);
 
   if (!this.gameRunning) {
-    textSize(32);
-    fill(0); // Black text
-    text('Finish!', width / 2, height / 2 + 35);
+    textSize(46);
+    fill(230, 176, 44); // Black text
+    textStyle(BOLD);
+    text('🎉Finish!🎉', width / 2, height / 2 + 25);
+    textStyle(NORMAL);
     gameCompleted({'clicked': this.score});
   }
 };
