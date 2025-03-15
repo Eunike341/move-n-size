@@ -39,3 +39,6 @@ function mouseReleased() {
   puzzle.mouseReleased();
 }
 
+function mouseMoved() {
+  puzzle.mouseMoved();
+}

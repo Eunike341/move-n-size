@@ -160,5 +160,54 @@ class Puzzle {
     let heightAccuracy = abs(guideline.h - rect.h) / guideline.h;
     return widthAccuracy <= 0.2 && heightAccuracy <= 0.2;
   }
+
+  mouseMoved() {
+    for (let rect of this.smallRects) {
+      let points = rect.getScalePoints(); // Assuming [top-left, top-right, bottom-left, bottom-right]
+
+      // Midpoints for edge resizing
+      let midTop = { x: rect.x + rect.w / 2, y: rect.y };
+      let midBottom = { x: rect.x + rect.w / 2, y: rect.y + rect.h };
+      let midLeft = { x: rect.x, y: rect.y + rect.h / 2 };
+      let midRight = { x: rect.x + rect.w, y: rect.y + rect.h / 2 };
+
+      let resizeZone = this.cornerSize / 2;
+
+      // Check corners for diagonal resize
+      if (this.isMouseNear(points[0], resizeZone) || this.isMouseNear(points[3], resizeZone)) {
+        cursor('nwse-resize'); // Top-left & Bottom-right
+        return;
+      }
+      if (this.isMouseNear(points[1], resizeZone) || this.isMouseNear(points[2], resizeZone)) {
+        cursor('nesw-resize'); // Top-right & Bottom-left
+        return;
+      }
+
+      // Check edges for horizontal/vertical resize
+      if (this.isMouseNear(midLeft, resizeZone) || this.isMouseNear(midRight, resizeZone)) {
+        cursor('ew-resize'); // Left & Right edges
+        return;
+      }
+      if (this.isMouseNear(midTop, resizeZone) || this.isMouseNear(midBottom, resizeZone)) {
+        cursor('ns-resize'); // Top & Bottom edges
+        return;
+      }
+
+      // Check if inside for moving
+      if (rect.isInside(mouseX, mouseY)) {
+        cursor('move');
+        return;
+      }
+    }
+
+    // Default cursor if nothing is hovered
+    cursor('default');
+  }
+
+  // Helper function to check if mouse is near a point
+  isMouseNear(point, threshold) {
+    return abs(mouseX - point.x) < threshold && abs(mouseY - point.y) < threshold;
+  }
+
 }
 
