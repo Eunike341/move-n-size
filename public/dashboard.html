@@ -46,8 +46,12 @@
 
         const showTest = document.getElementById('showTest');
 
+        let numOfResults = 0;
+
         results.forEach(item => {
             if (!item.name.toUpperCase().startsWith('TEST') || showTest.checked) {
+                numOfResults++;
+
                 const row = document.createElement('tr');
 
                 const tdName = document.createElement('td');
@@ -75,6 +79,9 @@
 
         });
 
+        const stats = document.createElement('p');
+        stats.textContent = 'Total Results: ' + numOfResults;
+        dataContainer.append(stats);
         dataContainer.append(table);
 
     }

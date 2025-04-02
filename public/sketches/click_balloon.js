@@ -125,6 +125,10 @@ class Balloon {
     const popTypes = ['left', 'right', 'double'];
     this.popType = random(popTypes);
 
+    if (this.popType === 'double') {
+        this.speed = random(0.5, 1); //double click balloon moves slower
+    }
+
     if (this.popType === 'left') {
       this.image = leftBalloonImage;
     } else if (this.popType === 'right') {
