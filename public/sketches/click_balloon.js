@@ -19,8 +19,6 @@ function setup() {
   // Disable the context menu on right-click
     document.addEventListener('contextmenu', event => event.preventDefault());
 
-    canvas.addEventListener('dblclick', handleDoubleClick);
-
   // Create initial balloons
   for (let i = 0; i < 7; i++) {
     let widthRange = random(70, width - 390);
@@ -102,7 +100,7 @@ function mousePressed() {
   }
 }
 
-function handleDoubleClick(event) {
+function doubleClicked() {
   console.log('double clicked');
   for (let balloon of balloons) {
     if ( balloon.popType === 'double' && balloon.isClicked(mouseX, mouseY) ) {
