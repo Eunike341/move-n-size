@@ -37,8 +37,26 @@
         const name = document.getElementById('name').value;
 
         submitScoreToFirestore(level, name, scoreObj, 'clicks');
+        showNextLevelLink();
       }
     }
+
+    function getCurrentLevel() {
+      const params = new URLSearchParams(window.location.search);
+      return parseInt(params.get("level") || "1", 10);
+    }
+
+    function showNextLevelLink() {
+      const nextLevel = getCurrentLevel() + 1;
+      const nextButton = document.getElementById('nextButton');
+      if (nextLevel >= 4) {
+        nextButton.href = `typing.html`;
+      } else {
+        nextButton.href = `clicks.html?level=${nextLevel}`;
+      }
+      nextButton.style.display = 'inline-block';
+    }
+
 
   </script>
 
@@ -50,11 +68,15 @@
 
     <a href="index.html" class="home-link">Home</a>
 
+    <a id="nextButton" class="home-link" style="display:none;">Next</a>
+
     <div class="form-group">
         <label for="name">Name:</label>
         <input type="text" id="name" name="name">
     </div>
 
     <div id="gameContainer"></div>
+
+
 </body>
 </html>
