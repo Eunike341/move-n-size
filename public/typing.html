@@ -27,18 +27,32 @@
     import { getQueryParam, submitScoreToFirestore } from './util.js';
     let puzzleCompletedFlag = false;
 
+    const nameFromUrl = new URLSearchParams(window.location.search).get('name');
+    if (nameFromUrl) {
+      document.getElementById('name').value = nameFromUrl;
+    }
+
     window.gameCompleted = async (scoreObj) => {
       if (!puzzleCompletedFlag) {
         puzzleCompletedFlag = true;
         const name = document.getElementById('name').value;
         submitScoreToFirestore(1, name, scoreObj, 'typing');
+        showNextLevelLink();
       }
+    }
+
+    function showNextLevelLink() {
+      const name = document.getElementById('name').value || '';
+      nextButton.href = `puzzle.html?level=1&name=${encodeURIComponent(name)}`;
+      nextButton.style.display = 'inline-block';
     }
 
   </script>
 </head>
 <body>
     <a href="index.html" class="home-link">Home</a>
+
+    <a id="nextButton" class="home-link" style="display:none;">Next</a>
 
     <div class="form-group">
         <label for="name">Name:</label>

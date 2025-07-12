@@ -30,6 +30,11 @@
 
     document.getElementById('level-number').textContent = level;
 
+    const nameFromUrl = new URLSearchParams(window.location.search).get('name');
+    if (nameFromUrl) {
+      document.getElementById('name').value = nameFromUrl;
+    }
+
     let timerStarted = false;
     let puzzleCompletedFlag = false;
 
@@ -40,6 +45,7 @@
 
         const name = document.getElementById('name').value;
         submitTimeToFirestore(level, name, 'placement');
+        showNextLevelLink();
       }
     }
 
@@ -48,6 +54,23 @@
         timerStarted = true;
         startTimer();
       }
+    }
+
+    function getCurrentLevel() {
+      const params = new URLSearchParams(window.location.search);
+      return parseInt(params.get("level") || "1", 10);
+    }
+
+    function showNextLevelLink() {
+      const name = document.getElementById('name').value || '';
+      const nextLevel = getCurrentLevel() + 1;
+      const nextButton = document.getElementById('nextButton');
+      if (nextLevel > 5) {
+        nextButton.href = `dashboard.html`;
+      } else {
+        nextButton.href = `puzzle.html?level=${nextLevel}&name=${encodeURIComponent(name)}`;
+      }
+      nextButton.style.display = 'inline-block';
     }
 
     </script>
@@ -75,6 +98,8 @@
 <body>
 <h1>Level <span id="level-number"></span></h1>
 <a href="index.html" class="home-link">Home</a>
+
+<a id="nextButton" class="home-link" style="display:none;">Next</a>
 
 <div class="form-group">
     <label for="name">Name:</label>

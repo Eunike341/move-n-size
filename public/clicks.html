@@ -28,6 +28,11 @@
 
     document.getElementById('level-number').textContent = level;
 
+    const nameFromUrl = new URLSearchParams(window.location.search).get('name');
+    if (nameFromUrl) {
+      document.getElementById('name').value = nameFromUrl;
+    }
+
     let puzzleCompletedFlag = false;
 
     window.gameCompleted = async (scoreObj) => {
@@ -47,12 +52,13 @@
     }
 
     function showNextLevelLink() {
+      const name = document.getElementById('name').value || '';
       const nextLevel = getCurrentLevel() + 1;
       const nextButton = document.getElementById('nextButton');
-      if (nextLevel >= 4) {
-        nextButton.href = `typing.html`;
+      if (nextLevel > 4) {
+        nextButton.href = `typing.html?name=${encodeURIComponent(name)}`;
       } else {
-        nextButton.href = `clicks.html?level=${nextLevel}`;
+        nextButton.href = `clicks.html?level=${nextLevel}&name=${encodeURIComponent(name)}`;
       }
       nextButton.style.display = 'inline-block';
     }
