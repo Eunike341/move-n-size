@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pure JS Click Trainer</title>
+    <style>
+  :root{
+    --bg:#0b1020; --panel:#121a32; --text:#e8ecff; --muted:#aab3d0;
+    --ok:#23c55e;  /* green = left click */
+    --warn:#ef4444;/* red   = right click */
+    --info:#3b82f6;/* blue  = double click */
+  }
+  * { box-sizing: border-box; }
+  body{
+    margin:0; font-family: system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    background: radial-gradient(1200px 600px at 70% -10%, #1a2550 0%, var(--bg) 40%, #070b16 100%);
+    color: var(--text); display:flex; min-height:100svh; align-items:center; justify-content:center;
+  }
+  .wrap{ width:min(980px,95vw); }
+  header{
+    display:flex; gap:16px; align-items:center; justify-content:space-between; margin-bottom:10px;
+  }
+  .stats{
+    display:flex; gap:18px; flex-wrap:wrap;
+    background:color-mix(in oklab, var(--panel) 85%, transparent);
+    border:1px solid #223157; padding:10px 14px; border-radius:14px;
+  }
+  .stat b{ font-size:1.1rem }
+  .hint{ color:var(--muted); font-size:.9rem }
+  .controls{ display:flex; gap:10px; align-items:center }
+  button{
+    background:#2d3a72; color:var(--text); border:none; border-radius:12px; padding:10px 16px;
+    font-weight:600; cursor:pointer; transition:transform .06s ease, opacity .2s ease;
+  }
+  button:hover{ transform:translateY(-1px) }
+  button:disabled{ opacity:.5; cursor:not-allowed }
+  input[type="number"]{
+    width:80px; padding:8px 10px; border-radius:10px; border:1px solid #31406f; background:#162148; color:var(--text);
+  }
+
+  .arena{
+    position:relative; height:520px; border-radius:18px; overflow:hidden;
+    background: repeating-linear-gradient(135deg, #0d1430 0 18px, #0f1838 18px 36px);
+    border:1px solid #223157; user-select:none; -webkit-user-select:none;
+    box-shadow: inset 0 0 0 1px #1b284f, 0 10px 30px rgba(0,0,0,.4);
+  }
+
+
+.target {
+  position:absolute;
+  width:70px;
+  height:70px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  font-weight:700;
+  font-size:.9rem;   /* a bit bigger */
+  color:white;
+  text-align:center;
+  text-shadow:0 1px 3px rgba(0,0,0,.35);
+  box-shadow:0 10px 24px rgba(0,0,0,.35), inset 0 0 0 2px rgba(255,255,255,.12);
+  transform:translate(-50%,-50%) scale(.9);
+  opacity:0;
+  transition:opacity .15s ease, transform .15s ease;
+}
+
+
+  .target.show{ opacity:1; transform:translate(-50%,-50%) scale(1) }
+  .target.left  { background: linear-gradient(145deg, #39e07a, var(--ok)); }
+  .target.right { background: linear-gradient(145deg, #ff6b6b, var(--warn)); }
+  .target.double{ background: linear-gradient(145deg, #69a6ff, var(--info)); }
+  .legend{ display:flex; gap:10px; align-items:center; }
+
+  .dot{
+  width:38px; height:20px; border-radius:12px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:.75rem; font-weight:600; color:white;
+}
+.dot.left   { background:var(--ok); }
+.dot.right  { background:var(--warn); }
+.dot.double { background:var(--info); }
+
+
+  .endcard{
+    position:absolute; inset:0; display:none; place-items:center; background:rgba(3,7,18,.75); backdrop-filter: blur(4px);
+  }
+  .endcard.show{ display:grid }
+  .card{
+    background:var(--panel); border:1px solid #223157; border-radius:16px; padding:18px 20px; width:min(520px,92%);
+    text-align:center; box-shadow: 0 20px 50px rgba(0,0,0,.5);
+  }
+  .card h2{ margin:0 0 8px }
+  .kbd{
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:.9rem;
+    background:#0e1632; border:1px solid #283566; padding:2px 6px; border-radius:6px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+    <header>
+        <div class="legend hint">
+            <span class="dot left">Left</span>
+            <span class="dot right">Right</span>
+            <span class="dot double">2x</span>
+        </div>
+        <div class="controls">
+            <label class="hint">Seconds:
+                <input id="seconds" type="number" min="10" max="300" step="5" value="60">
+            </label>
+            <button id="startBtn">Start</button>
+            <button id="resetBtn" disabled>Reset</button>
+        </div>
+    </header>
+
+
+    <div class="stats">
+        <div class="stat">Time: <b id="time">60</b>s</div>
+        <div class="stat">Score: <b id="score">0</b></div>
+        <div class="stat">Mistakes: <b id="miss">0</b></div>
+        <div class="stat hint">Tip: use <span class="kbd">right-click</span> (menu disabled)</div>
+    </div>
+
+    <div id="arena" class="arena" aria-label="Game arena" role="application"></div>
+
+    <div id="overlay" class="endcard">
+        <div class="card">
+            <h2>Time’s up!</h2>
+            <p><b>Score:</b> <span id="finalScore">0</span> • <b>Mistakes:</b> <span id="finalMiss">0</span></p>
+            <p class="hint">Targets: <span class="dot left"></span> left, <span class="dot right"></span> right, <span class="dot double"></span> double</p>
+            <button id="playAgain">Play again</button>
+        </div>
+    </div>
+</div>
+
+<script>
+(() => {
+  const arena = document.getElementById('arena');
+  const startBtn = document.getElementById('startBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const secsInput = document.getElementById('seconds');
+  const timeEl = document.getElementById('time');
+  const scoreEl = document.getElementById('score');
+  const missEl  = document.getElementById('miss');
+  const overlay = document.getElementById('overlay');
+  const finalScore = document.getElementById('finalScore');
+  const finalMiss = document.getElementById('finalMiss');
+  const playAgain = document.getElementById('playAgain');
+
+  const TARGET_SIZE = 52; // px
+  const MODES = ['left','right','double']; // green / red / blue
+  const MODE_WEIGHTS = { left: 0.45, right: 0.35, double: 0.20 };
+
+  const state = {
+    running:false, timerId:null, timeLeft:60, score:0, mistakes:0, target:null
+  };
+
+  function pickMode() {
+    const r = Math.random();
+    let acc = 0;
+    for (const m of MODES) {
+      acc += MODE_WEIGHTS[m];
+      if (r <= acc) return m;
+    }
+    return 'left';
+  }
+
+  function randPos() {
+    const rect = arena.getBoundingClientRect();
+    const pad = TARGET_SIZE * 0.65;
+    const x = Math.random() * (rect.width - pad*2) + pad;
+    const y = Math.random() * (rect.height - pad*2) + pad;
+    return { x, y };
+  }
+
+  function clearTarget() {
+    if (state.target && state.target.isConnected) arena.removeChild(state.target);
+    state.target = null;
+  }
+
+  function spawnTarget() {
+    clearTarget();
+    const t = document.createElement('div');
+    const mode = pickMode();
+    const { x, y } = randPos();
+    t.className = `target ${mode}`;
+    t.dataset.mode = mode;
+    t.style.left = `${x}px`;
+    t.style.top  = `${y}px`;
+    t.title = mode === 'left' ? 'Left-click'
+             : mode === 'right' ? 'Right-click'
+             : 'Double-click';
+    t.textContent = mode === 'left' ? 'Left' :
+                mode === 'right' ? 'Right' :
+                '2x';
+
+    arena.appendChild(t);
+    // Animate in
+    requestAnimationFrame(() => t.classList.add('show'));
+    state.target = t;
+  }
+
+  function startGame() {
+    if (state.running) return;
+    state.timeLeft = clampSec(+secsInput.value || 60);
+    state.score = 0; state.mistakes = 0;
+    updateHUD();
+    overlay.classList.remove('show');
+    startBtn.disabled = true; resetBtn.disabled = false; secsInput.disabled = true;
+    state.running = true;
+    spawnTarget();
+    state.timerId = setInterval(tick, 1000);
+  }
+
+  function resetGame() {
+    stopGame();
+    state.timeLeft = clampSec(+secsInput.value || 60);
+    state.score = 0; state.mistakes = 0;
+    updateHUD(); clearTarget();
+    startBtn.disabled = false; resetBtn.disabled = true; secsInput.disabled = false;
+    overlay.classList.remove('show');
+  }
+
+  function stopGame() {
+    state.running = false;
+    clearInterval(state.timerId); state.timerId = null;
+    startBtn.disabled = false; secsInput.disabled = false;
+  }
+
+  function tick() {
+    if (!state.running) return;
+    state.timeLeft -= 1;
+    updateHUD();
+    if (state.timeLeft <= 0) {
+      endGame();
+    } else if (!state.target) {
+      // If target was removed without respawn (edge), ensure one exists
+      spawnTarget();
+    }
+  }
+
+  function endGame() {
+    stopGame();
+    clearTarget();
+    resetBtn.disabled = true;
+    finalScore.textContent = state.score;
+    finalMiss.textContent = state.mistakes;
+    overlay.classList.add('show');
+  }
+
+  function updateHUD() {
+    timeEl.textContent = Math.max(0, state.timeLeft);
+    scoreEl.textContent = state.score;
+    missEl.textContent = state.mistakes;
+  }
+
+  function clampSec(v){ return Math.max(10, Math.min(300, v|0)); }
+
+  function handleHit(target) {
+    // Consume and respawn
+    target.classList.remove('show');
+    setTimeout(() => {
+      if (target.isConnected) arena.removeChild(target);
+      if (state.running) spawnTarget();
+    }, 120);
+  }
+
+  // Core input handling (no libraries)
+  arena.addEventListener('click', (e) => {
+    if (!state.running) return;
+    const t = e.target;
+    if (!(t && t.classList.contains('target'))) return;
+
+    const mode = t.dataset.mode;
+    // Left-click is a normal click. Ignore single clicks on double mode
+    if (mode === 'left') {
+      state.score += 1; updateHUD(); handleHit(t);
+    } else if (mode !== 'double') {
+      state.mistakes += 1; updateHUD();
+    }
+  });
+
+  // Right-click (contextmenu). Prevent menu and treat as right.
+  arena.addEventListener('contextmenu', (e) => {
+    if (!state.running) return;
+    e.preventDefault();
+    const t = e.target;
+    if (!(t && t.classList.contains('target'))) return;
+    const mode = t.dataset.mode;
+    if (mode === 'right') {
+      state.score += 1; updateHUD(); handleHit(t);
+    } else {
+      state.mistakes += 1; updateHUD();
+    }
+  });
+
+  // Double-click specifically for double targets.
+  arena.addEventListener('dblclick', (e) => {
+    if (!state.running) return;
+    const t = e.target;
+    if (!(t && t.classList.contains('target'))) return;
+    const mode = t.dataset.mode;
+    if (mode === 'double') {
+      state.score += 2; updateHUD(); handleHit(t);
+    } else {
+      // If the user double-clicked a non-double target, count as a mistake once.
+      state.mistakes += 1; updateHUD();
+    }
+  });
+
+  // Controls
+  startBtn.addEventListener('click', startGame);
+  resetBtn.addEventListener('click', resetGame);
+  playAgain.addEventListener('click', () => { resetGame(); startGame(); });
+
+  // Keyboard quick start
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !state.running) startGame();
+  });
+
+  // Initialize HUD
+  updateHUD();
+})();
+</script>
+</body>
+</html>

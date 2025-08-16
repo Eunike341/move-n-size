@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Pure JS Balloon Pop</title>
+    <style>
+  :root{
+    --bg:#0b1020; --panel:#121a32; --text:#e8ecff; --muted:#aab3d0;
+    --left:#22c55e; --right:#ef4444; --double:#3b82f6;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    color:var(--text);
+    background: radial-gradient(1200px 600px at 70% -10%, #1a2550 0%, var(--bg) 40%, #070b16 100%);
+    display:flex; align-items:center; justify-content:center; min-height:100svh;
+  }
+  .wrap{width:min(980px,95vw)}
+  header{display:flex; gap:12px; align-items:center; justify-content:space-between; margin-bottom:10px}
+  .legend{display:flex; gap:14px; align-items:center; color:var(--muted); font-size:.95rem}
+  .dot{width:10px; height:10px; border-radius:50%}
+  .dot.left{background:var(--left)} .dot.right{background:var(--right)} .dot.double{background:var(--double)}
+  .controls{display:flex; gap:10px; align-items:center}
+  button{
+    background:#2d3a72; color:#fff; border:none; border-radius:12px; padding:10px 16px;
+    font-weight:600; cursor:pointer; transition:transform .06s ease, opacity .2s ease;
+  }
+  button:hover{transform:translateY(-1px)} button:disabled{opacity:.5; cursor:not-allowed}
+  input[type="number"]{
+    width:80px; padding:8px 10px; border-radius:10px; border:1px solid #31406f; background:#162148; color:var(--text);
+  }
+  .stats{
+    display:flex; gap:18px; flex-wrap:wrap; margin-bottom:10px;
+    background:color-mix(in oklab, var(--panel) 85%, transparent);
+    border:1px solid #223157; padding:10px 14px; border-radius:14px;
+  }
+  .arena{
+    position:relative; height:560px; border-radius:18px; overflow:hidden;
+    background: linear-gradient(#0e1632, #0b1229);
+    border:1px solid #223157; user-select:none; -webkit-user-select:none;
+    box-shadow: inset 0 0 0 1px #1b284f, 0 10px 30px rgba(0,0,0,.4);
+  }
+  .balloon{
+    position:absolute; width:56px; height:72px; border-radius:56px 56px 46px 46px / 60px 60px 40px 40px;
+    display:grid; place-items:center; font-weight:800; color:white; text-shadow:0 1px 3px rgba(0,0,0,.35);
+    box-shadow:0 16px 30px rgba(0,0,0,.35), inset 0 0 0 2px rgba(255,255,255,.15);
+    transform:translate(-50%,-50%); opacity:.95;
+  }
+  .balloon.left  { background:linear-gradient(145deg,#49e98a,var(--left)) }
+  .balloon.right { background:linear-gradient(145deg,#ff7b7b,var(--right)) }
+  .balloon.double{ background:linear-gradient(145deg,#7fb1ff,var(--double)) }
+  .string{
+    position:absolute; left:50%; top:64px; width:2px; height:22px; background:rgba(255,255,255,.35); transform:translateX(-50%);
+  }
+  .hint{color:var(--muted); font-size:.92rem}
+  .overlay{
+    position:absolute; inset:0; display:none; place-items:center; background:rgba(3,7,18,.75); backdrop-filter: blur(4px);
+  }
+  .overlay.show{display:grid}
+  .card{
+    background:var(--panel); border:1px solid #223157; border-radius:16px; padding:18px 20px; width:min(520px,92%);
+    text-align:center; box-shadow:0 20px 50px rgba(0,0,0,.5);
+  }
+  .kbd{font-family:ui-monospace,Menlo,Consolas,monospace; font-size:.9rem; background:#0e1632; border:1px solid #283566; padding:2px 6px; border-radius:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+    <header>
+        <div class="legend">
+            <span class="dot left"></span>&nbsp;Left-click
+            <span class="dot right" style="margin-left:14px"></span>&nbsp;Right-click
+            <span class="dot double" style="margin-left:14px"></span>&nbsp;Double-click
+        </div>
+        <div class="controls">
+            <label class="hint">Seconds: <input id="seconds" type="number" min="15" max="300" step="5" value="60"></label>
+            <label class="hint">Max on-screen: <input id="maxB" type="number" min="1" max="15" step="1" value="6"></label>
+            <button id="startBtn">Start</button>
+            <button id="resetBtn" disabled>Reset</button>
+        </div>
+    </header>
+
+    <div class="stats">
+        <div>Time: <b id="time">60</b>s</div>
+        <div>Score: <b id="score">0</b></div>
+        <div>Mistakes: <b id="miss">0</b></div>
+        <div class="hint">Generic rule: pop by correct mouse action (context menu disabled)</div>
+    </div>
+
+    <div id="arena" class="arena" aria-label="Game arena" role="application"></div>
+
+    <div id="overlay" class="overlay">
+        <div class="card">
+            <h2>Round over</h2>
+            <p><b>Score:</b> <span id="finalScore">0</span> • <b>Mistakes:</b> <span id="finalMiss">0</span></p>
+            <p class="hint">Controls: left-click, <span class="kbd">right-click</span>, or double-click</p>
+            <button id="playAgain">Play again</button>
+        </div>
+    </div>
+</div>
+
+<script>
+(() => {
+  // --- Elements
+  const arena   = document.getElementById('arena');
+  const timeEl  = document.getElementById('time');
+  const scoreEl = document.getElementById('score');
+  const missEl  = document.getElementById('miss');
+  const secsInp = document.getElementById('seconds');
+  const maxBInp = document.getElementById('maxB');
+  const startBtn= document.getElementById('startBtn');
+  const resetBtn= document.getElementById('resetBtn');
+  const overlay = document.getElementById('overlay');
+  const finalScore = document.getElementById('finalScore');
+  const finalMiss  = document.getElementById('finalMiss');
+  const playAgain  = document.getElementById('playAgain');
+
+  // --- Config
+  const TYPES = ['left','right','double'];
+  const TYPE_WEIGHTS = { left:.5, right:.3, double:.2 }; // tweak distribution here
+  const MIN_SPAWN_MS = 450, MAX_SPAWN_MS = 950;
+  const SPEED_RANGE = [18, 38]; // pixels per second vertical float speed
+
+  // --- State
+  const S = {
+    running:false, timeLeft:60, score:0, mistakes:0,
+    nextSpawn:0, lastTs:0, timerId:null, balloons:new Map(), idSeq:1
+  };
+
+  // --- Utils
+  const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+  function pickType(){
+    const r=Math.random(); let acc=0;
+    for(const t of TYPES){ acc+=TYPE_WEIGHTS[t]; if(r<=acc) return t; }
+    return 'left';
+  }
+  function rect(){ return arena.getBoundingClientRect(); }
+  function rnd(a,b){ return Math.random()*(b-a)+a; }
+
+  // --- Balloon factory
+  function spawnBalloon(){
+    const {width,height} = rect();
+    const id = S.idSeq++;
+    const type = pickType();
+    const x = rnd(50, width-50);
+    const y = height + rnd(20, 80); // start below the bottom
+    const speed = rnd(SPEED_RANGE[0], SPEED_RANGE[1]); // px/s
+    const el = document.createElement('div');
+    el.className = `balloon ${type}`;
+    el.dataset.id = id; el.dataset.type = type;
+    el.style.left = `${x}px`; el.style.top = `${y}px`;
+    el.title = type==='left'?'Left-click':type==='right'?'Right-click':'Double-click';
+    el.innerHTML = type==='double' ? '×2' : '';
+    const string = document.createElement('div'); string.className='string'; el.appendChild(string);
+    arena.appendChild(el);
+    S.balloons.set(String(id), { id, el, x, y, speed, type });
+  }
+
+  // --- Game loop
+  function loop(ts){
+    if(!S.running) return;
+    const dt = (ts - (S.lastTs||ts)) / 1000;
+    S.lastTs = ts;
+
+    // Move balloons
+    for(const b of S.balloons.values()){
+      b.y -= b.speed * dt;
+      b.el.style.top = `${b.y}px`;
+      // Remove if off the top
+      if (b.y < -40){
+        removeBalloon(b.id);
+      }
+    }
+
+    // Spawn logic
+    S.nextSpawn -= dt*1000;
+    if (S.nextSpawn <= 0 && S.balloons.size < clamp(+maxBInp.value||6,1,15)){
+      spawnBalloon();
+      S.nextSpawn = rnd(MIN_SPAWN_MS, MAX_SPAWN_MS);
+    }
+
+    requestAnimationFrame(loop);
+  }
+
+  function removeBalloon(id){
+    const key=String(id);
+    const b=S.balloons.get(key);
+    if(!b) return;
+    if (b.el.isConnected) arena.removeChild(b.el);
+    S.balloons.delete(key);
+  }
+
+  // --- Input handlers (no libraries)
+  // Left-click
+  arena.addEventListener('click', (e)=>{
+    if(!S.running) return;
+    const target = e.target.closest('.balloon');
+    if(!target) return;
+    const type = target.dataset.type;
+    if(type==='left'){ S.score+=1; updateHUD(); removeBalloon(target.dataset.id); }
+    else if(type!=='double'){ S.mistakes+=1; updateHUD(); }
+    // (Ignore single clicks on double type—must be dblclick)
+  });
+
+  // Right-click
+  arena.addEventListener('contextmenu', (e)=>{
+    if(!S.running) return;
+    e.preventDefault();
+    const target = e.target.closest('.balloon');
+    if(!target) return false;
+    const type = target.dataset.type;
+    if(type==='right'){ S.score+=1; updateHUD(); removeBalloon(target.dataset.id); }
+    else { S.mistakes+=1; updateHUD(); }
+    return false;
+  });
+
+  // Double-click
+  arena.addEventListener('dblclick', (e)=>{
+    if(!S.running) return;
+    const target = e.target.closest('.balloon');
+    if(!target) return;
+    const type = target.dataset.type;
+    if(type==='double'){ S.score+=2; updateHUD(); removeBalloon(target.dataset.id); }
+    else { S.mistakes+=1; updateHUD(); }
+  });
+
+  // --- Timer
+  function startTimer(){
+    clearInterval(S.timerId);
+    S.timerId = setInterval(()=>{
+      if(!S.running) return;
+      S.timeLeft -= 1; updateHUD();
+      if(S.timeLeft<=0){ endGame(); }
+    }, 1000);
+  }
+
+  // --- HUD & lifecycle
+  function updateHUD(){
+    timeEl.textContent = Math.max(0,S.timeLeft);
+    scoreEl.textContent = S.score;
+    missEl.textContent = S.mistakes;
+  }
+
+  function startGame(){
+    if(S.running) return;
+    S.running = true;
+    S.score=0; S.mistakes=0; S.timeLeft = clamp(+secsInp.value||60,15,300);
+    S.nextSpawn = 0; S.lastTs = 0;
+    overlay.classList.remove('show');
+    startBtn.disabled=true; resetBtn.disabled=false; secsInp.disabled=true; maxBInp.disabled=true;
+    // clear arena
+    for(const b of [...S.balloons.values()]) removeBalloon(b.id);
+    updateHUD();
+    startTimer();
+    requestAnimationFrame(loop);
+  }
+
+  function endGame(){
+    S.running=false;
+    clearInterval(S.timerId); S.timerId=null;
+    startBtn.disabled=false; resetBtn.disabled=true; secsInp.disabled=false; maxBInp.disabled=false;
+    // remove remaining balloons
+    for(const b of [...S.balloons.values()]) removeBalloon(b.id);
+    finalScore.textContent = S.score; finalMiss.textContent = S.mistakes;
+    overlay.classList.add('show');
+  }
+
+  function resetGame(){
+    S.running=false;
+    clearInterval(S.timerId); S.timerId=null;
+    startBtn.disabled=false; resetBtn.disabled=true; secsInp.disabled=false; maxBInp.disabled=false;
+    for(const b of [...S.balloons.values()]) removeBalloon(b.id);
+    S.score=0; S.mistakes=0; S.timeLeft = clamp(+secsInp.value||60,15,300);
+    overlay.classList.remove('show');
+    updateHUD();
+  }
+
+  // Controls
+  startBtn.addEventListener('click', startGame);
+  resetBtn.addEventListener('click', resetGame);
+  playAgain.addEventListener('click', ()=>{ resetGame(); startGame(); });
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Enter' && !S.running) startGame(); });
+
+  // Init
+  updateHUD();
+})();
+</script>
+</body>
+</html>
