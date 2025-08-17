@@ -85,13 +85,9 @@
     /* Arena card */
     .arena{
       position:relative; height:520px; border-radius:var(--radius); overflow:hidden;
-      background:
-        radial-gradient(160px 60px at 70% 10%, #fff6 0%, #fff0 70%),
-        radial-gradient(140px 60px at 25% 12%, #fff6 0%, #fff0 72%),
-        repeating-linear-gradient(0deg, #faf9ff 0 18px, #f2efff 18px 19px);
+      background: linear-gradient(135deg, #fef9ff 0%, #f7f2ff 40%, #eaf9ff 80%, #fff9f5 100%);
       border:1px solid var(--line);
       box-shadow: var(--shadow);
-      user-select:none; -webkit-user-select:none;
     }
 
     /* Targets */
@@ -142,6 +138,72 @@
       animation: pop .6s ease forwards;
     }
     @keyframes pop{ to { transform: translate(-50%,-50%) scale(12); opacity:0 } }
+
+    /* --- Cute ripple per click type --- */
+.ripple{
+  position:absolute; pointer-events:none;
+  width:12px; height:12px; border-radius:999px;
+  transform: translate(-50%,-50%) scale(1);
+  animation: ripple-pop .6s ease forwards;
+  box-shadow: 0 0 0 0 var(--halo, #0000);
+}
+.ripple::after{
+  content:""; position:absolute; inset:0;
+  border-radius:inherit; border:2px solid currentColor;
+  opacity:.7; transform:scale(1);
+  animation: ripple-ring .6s ease forwards;
+}
+.ripple.left   { color: var(--ok);   --halo: color-mix(in oklab, var(--ok) 25%, transparent);   background: color-mix(in oklab, var(--ok) 20%, transparent); }
+.ripple.right  { color: var(--warn); --halo: color-mix(in oklab, var(--warn) 25%, transparent); background: color-mix(in oklab, var(--warn) 20%, transparent); }
+.ripple.double { color: var(--info); --halo: color-mix(in oklab, var(--info) 25%, transparent); background: color-mix(in oklab, var(--info) 20%, transparent); }
+.ripple.miss   { color: #b4b0c9;     --halo: #b4b0c933; background: #b4b0c91a; }
+
+@keyframes ripple-pop {
+  to { transform: translate(-50%,-50%) scale(14); opacity:0; box-shadow: 0 0 0 16px var(--halo) }
+}
+@keyframes ripple-ring {
+  to { transform: scale(2.3); opacity:0; }
+}
+
+/* --- Sparkles --- */
+.sparkle{
+  position:absolute; pointer-events:none; width:6px; height:6px; border-radius:2px;
+  background: currentColor; opacity:.95; transform: translate(-50%,-50%) scale(1);
+  animation: sparkle 520ms ease-out forwards;
+  filter: drop-shadow(0 2px 2px #0001);
+}
+.sparkle.left   { color: var(--ok); }
+.sparkle.right  { color: var(--warn); }
+.sparkle.double { color: var(--info); }
+.sparkle.miss   { color: #b4b0c9; }
+
+@keyframes sparkle {
+  70% { opacity:1; }
+  100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(.3); opacity:0; }
+}
+
+/* --- Target hit squash --- */
+@keyframes squash { 0%{transform:translate(-50%,-50%) scale(1)} 50%{transform:translate(-50%,-50%) scaleX(1.18) scaleY(.84)} 100%{transform:translate(-50%,-50%) scale(1)} }
+.target.hit { animation: squash .22s ease both; }
+
+/* --- Gentle floating bubbles in arena background --- */
+.arena::before,
+.arena::after{
+  content:""; position:absolute; inset:auto; pointer-events:none;
+  width:180px; height:180px; border-radius:50%;
+  background: radial-gradient(circle at 30% 30%, #fff8, #fff0 60%);
+  filter: blur(1px); opacity:.6;
+  animation: floaty 12s ease-in-out infinite;
+}
+.arena::before{ left: -40px; top: -30px; animation-duration: 13s; }
+.arena::after { right: -30px; bottom: -20px; animation-duration: 11s; }
+
+@keyframes floaty{
+  0%   { transform: translateY(0) translateX(0) }
+  50%  { transform: translateY(16px) translateX(8px) }
+  100% { transform: translateY(0) translateX(0) }
+}
+
   </style>
 </head>
 <body>
@@ -309,31 +371,59 @@
     function shake(el){ el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
 
     // Click rippleAt (inside arena only)
-    function rippleAt(e){
+    function rippleAt(e, kind = 'left'){
       const rect = arena.getBoundingClientRect();
-      const x = e.clientX - rect.left;  // viewport -> local
+      const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
 
       const r = document.createElement('span');
-      r.className = 'ripple';
+      r.className = `ripple ${kind}`;
       r.style.left = x + 'px';
       r.style.top  = y + 'px';
       arena.appendChild(r);
-      setTimeout(() => r.remove(), 600);
+      setTimeout(() => r.remove(), 620);
     }
 
+    // cute sparkle burst on hits
+    function sparklesAt(e, kind = 'left', count = 9){
+      const rect = arena.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
 
+      for(let i=0;i<count;i++){
+        const s = document.createElement('i');
+        s.className = `sparkle ${kind}`;
+        s.style.left = x + 'px';
+        s.style.top  = y + 'px';
 
-    // Core input handling
+        // random fan-out
+        const angle = Math.random()*Math.PI*2;
+        const dist  = 16 + Math.random()*18;
+        s.style.setProperty('--dx', Math.cos(angle)*dist + 'px');
+        s.style.setProperty('--dy', Math.sin(angle)*dist + 'px');
+
+        arena.appendChild(s);
+        setTimeout(()=> s.remove(), 520);
+      }
+    }
+
+    // decorate hit animation
+    function popTarget(t){
+      t.classList.add('hit');
+      setTimeout(()=> t.classList.remove('hit'), 240);
+    }
+
+    // Left-click
     arena.addEventListener('click', (e) => {
       if (!state.running) return;
-      rippleAt(e);
       const t = e.target;
-      if (!(t && t.classList.contains('target'))) return;
+      const kind = (t && t.classList.contains('target')) ? t.dataset.mode : 'miss';
+      rippleAt(e, kind);
 
+      if (!(t && t.classList.contains('target'))) return;
       const mode = t.dataset.mode;
       if (mode === 'left') {
-        state.score += 1; updateHUD(); pulse(scoreEl); handleHit(t);
+        state.score += 1; updateHUD(); pulse(scoreEl); popTarget(t); sparklesAt(e, 'left'); handleHit(t);
       } else if (mode !== 'double') {
         state.mistakes += 1; updateHUD(); shake(missEl);
       }
@@ -343,12 +433,14 @@
     arena.addEventListener('contextmenu', (e) => {
       if (!state.running) return;
       e.preventDefault();
-      rippleAt(e);
       const t = e.target;
+      const kind = (t && t.classList.contains('target')) ? t.dataset.mode : 'miss';
+      rippleAt(e, kind);
+
       if (!(t && t.classList.contains('target'))) return;
       const mode = t.dataset.mode;
       if (mode === 'right') {
-        state.score += 1; updateHUD(); pulse(scoreEl); handleHit(t);
+        state.score += 1; updateHUD(); pulse(scoreEl); popTarget(t); sparklesAt(e, 'right'); handleHit(t);
       } else {
         state.mistakes += 1; updateHUD(); shake(missEl);
       }
@@ -357,16 +449,19 @@
     // Double-click
     arena.addEventListener('dblclick', (e) => {
       if (!state.running) return;
-      rippleAt(e);
       const t = e.target;
+      const kind = (t && t.classList.contains('target')) ? t.dataset.mode : 'miss';
+      rippleAt(e, kind);
+
       if (!(t && t.classList.contains('target'))) return;
       const mode = t.dataset.mode;
       if (mode === 'double') {
-        state.score += 2; updateHUD(); pulse(scoreEl); handleHit(t);
+        state.score += 2; updateHUD(); pulse(scoreEl); popTarget(t); sparklesAt(e, 'double'); handleHit(t);
       } else {
         state.mistakes += 1; updateHUD(); shake(missEl);
       }
     });
+
 
     // Controls
     startBtn.addEventListener('click', startGame);
