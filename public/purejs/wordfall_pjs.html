@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Word Rain — Whack-a-Mole Palette + Dual Ghosting</title>
+  <style>
+  @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600&display=swap');
+
+  :root{
+    --bg1:#f7f2ff; --bg2:#fff9ff; --panel:#ffffffcc; --ink:#3a2c54; --muted:#8f86a6;
+    --accent:#7ae3ff; --accent2:#ffb3e6; --good:#75e08a; --bad:#ff7b7b;
+    --pill:#ffffffdd; --edge:#e7d0ff; --violet:#6c27c6;
+    --shadow:0 8px 22px rgba(108,52,133,.25);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; font:18px/1.5 "Baloo 2",ui-rounded,"Segoe UI",sans-serif;
+    background:
+      radial-gradient(1600px 500px at 50% -150px, #efe6ff 0 40%, transparent 65%) no-repeat,
+      linear-gradient(180deg, var(--bg1), var(--bg2));
+    display:grid; place-items:start center; min-height:100vh; padding:20px 12px 34px; color:var(--ink);
+  }
+  .wrap{width:min(960px,96vw); position:relative}
+
+  /* HUD */
+  #hud{
+    display:flex; gap:12px; flex-wrap:wrap; align-items:center;
+    background:linear-gradient(180deg,#fff,var(--panel));
+    border:2px solid var(--edge); border-radius:18px; padding:10px 14px; box-shadow:var(--shadow);
+    font-weight:700;
+  }
+  #hud .stat{display:flex; align-items:center; gap:6px; background:#fff; border:2px solid var(--edge);
+    border-radius:14px; padding:6px 12px;}
+  .pill{font-weight:700; color:var(--violet); background:linear-gradient(180deg,#ffeeff,#f3e7ff);
+    border:2px solid var(--edge); border-radius:999px; padding:2px 12px;}
+
+  button{
+    font-weight:700; color:#fff; background:linear-gradient(180deg,#8c39e0,var(--violet));
+    border:2px solid #5b1ea4; border-radius:14px; padding:8px 16px;
+    box-shadow:0 3px 0 #4c1987,var(--shadow); cursor:pointer;
+  }
+  button:disabled{opacity:.5; box-shadow:none}
+
+  /* Board */
+  #board{
+    margin-top:16px; height:64vh; min-height:360px; position:relative;
+    border:2px solid var(--edge); border-radius:22px; background:linear-gradient(180deg,#fff,#faf5ff);
+    box-shadow:var(--shadow); overflow:hidden;
+  }
+
+  /* Falling word */
+  .word{
+    position:absolute; padding:6px 14px; background:var(--pill); border:2px solid var(--edge);
+    border-radius:999px; font-weight:700; color:var(--violet);
+    box-shadow:0 6px 14px rgba(108,52,133,.25); white-space:nowrap; user-select:none;
+  }
+  .word.match{outline:2px dashed var(--accent2); outline-offset:3px}
+  .word .ghost{opacity:.45}
+  .word.hit{background:#d9ffea; border-color:#b8f6d1; color:#1f7a54; animation:pop .2s}
+  .word.miss{background:#ffe5ea; border-color:#ffc4cf; color:#a23a53;}
+  @keyframes pop{0%{transform:scale(.9)} 50%{transform:scale(1.1)} 100%{transform:scale(1)}}
+
+  /* Typed pill */
+  #typed{margin-top:10px;}
+  #typed .bubble{background:#fff; border:2px solid var(--edge); padding:6px 12px; border-radius:999px; display:inline-block; min-width:160px; font-weight:700;}
+  #typed .good{color:var(--good)}  #typed .bad{color:var(--bad)}  #typed .ghost{opacity:.45; margin-left:2px;}
+
+  /* Overlay */
+  #overlay{position:absolute; inset:0; display:none; place-items:center; background:rgba(247,242,255,.8);}
+  #overlay .card{background:#fff; border:2px solid var(--edge); border-radius:22px; padding:24px; box-shadow:var(--shadow); text-align:center;}
+  .big{font-size:26px; color:var(--violet)}
+
+  #typebox{position:absolute; opacity:0; pointer-events:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="hud">
+    <div class="stat">Score <span class="pill" id="score">0</span></div>
+    <div class="stat">Lives <span class="pill" id="lifeHearts">❤️❤️❤️</span></div>
+    <div class="stat">Streak <span class="pill" id="streak">0</span></div>
+    <div class="stat">Level <span class="pill" id="level">1</span></div>
+    <div class="grow"></div>
+    <button id="startBtn">Start</button>
+    <button id="pauseBtn" disabled>Pause</button>
+    <button id="restartBtn" disabled>Restart</button>
+  </div>
+
+  <div id="board">
+    <div id="overlay">
+      <div class="card">
+        <h2>Word Rain 🌸</h2>
+        <p>Type words before they hit the bottom.</p>
+        <p class="big">Press Start or any key!</p>
+        <button id="overlayStart">Start</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="typed">
+    <div class="bubble">Type: <span id="typedText"></span><span class="ghost" id="ghostText"></span></div>
+  </div>
+  <input id="typebox" autocomplete="off" spellcheck="false" />
+</div>
+<script>
+(() => {
+  // Config
+  const MAX_LIVES=3, BASE_SPEED=52, SPEED_PER_LEVEL=14, SPAWN_START_MS=1500, SPAWN_MIN_MS=520;
+  const LEVEL_UP_EVERY=8, POINTS_BASE=10, POINTS_SPEED_FACTOR=0.35;
+
+  // LEVELLED WORD SETS (add/modify as you like)
+const WORD_SETS = [
+  // Level 1 — short & cute
+  "aa bb cc oo ii ee uu by mm op ow no go it at".split(" "),
+  // Level 2 — short & cute
+  "cat sun cup gum hop jam kit log map nap owl pea red run toy".split(" "),
+  // Level 3 — 4–5 letters
+  "apple bunny candy cozy dream fuzzy happy honey jelly kids lilac peach sugar tulip".split(" "),
+  // Level 4 — mixed medium
+  "cherry mochi vanilla rainbow sparkle cuddle gentle giggle mellow".split(" "),
+  // Level 5 — a bit longer/challenging
+  "butterfly strawberry lemonade peppermint tangerine blueberry chocolate cinnamon".split(" "),
+  // Level 6 — speed round
+  "algorithm variable function compile execute runtime network package module object".split(" "),
+];
+
+// current pool we pick from
+let currentWords = WORD_SETS[0];
+
+
+  // DOM
+  const board=document.getElementById('board'), overlay=document.getElementById('overlay'), overlayStart=document.getElementById('overlayStart');
+  const typebox=document.getElementById('typebox'), typedTextEl=document.getElementById('typedText'), ghostTextEl=document.getElementById('ghostText');
+  const scoreEl=document.getElementById('score'), levelEl=document.getElementById('level'), streakEl=document.getElementById('streak'), lifeHearts=document.getElementById('lifeHearts');
+  const startBtn=document.getElementById('startBtn'), pauseBtn=document.getElementById('pauseBtn'), restartBtn=document.getElementById('restartBtn');
+
+  // State
+  let running=false, paused=false, lastTs=0, spawnAcc=0, spawnEvery=SPAWN_START_MS;
+  let score=0, lives=MAX_LIVES, streak=0, level=1, cleared=0;
+  let typed=""; let words=[]; let idSeq=1; let rafId=0;
+
+  // Helpers
+  const rand=(a,b)=>Math.random()*(b-a)+a;
+  const pick=a=>a[Math.floor(Math.random()*a.length)];
+
+  function updateHUD(){
+    scoreEl.textContent=score;
+    levelEl.textContent=level;
+    streakEl.textContent=streak;
+    lifeHearts.textContent='❤️'.repeat(lives)+'🤍'.repeat(MAX_LIVES-lives);
+  }
+
+  function resetGame(){
+    words.forEach(w=>w.el.remove());
+    words.length=0;
+    score=0; lives=MAX_LIVES; streak=0; level=1; cleared=0; typed="";
+    spawnEvery=SPAWN_START_MS; spawnAcc=0;
+    updateTyped();
+    updateHUD();
+  }
+
+  function showOverlay(show){ overlay.style.display = show ? 'grid' : 'none'; }
+
+  function levelUpIfNeeded(){
+    const tgt = 1 + Math.floor(cleared / LEVEL_UP_EVERY);
+    if (tgt > level) {
+      level = tgt;
+      spawnEvery = Math.max(SPAWN_MIN_MS, SPAWN_START_MS - (level-1)*120);
+
+      // NEW: rotate/select the word set for this level
+      const idx = Math.min(level - 1, WORD_SETS.length - 1); // clamp to last set
+      currentWords = WORD_SETS[idx];
+
+      // (optional) quick visual cue
+      board.style.outlineColor = '#ffc7f2';
+      setTimeout(() => board.style.outlineColor = '#e7d0ff', 320);
+    }
+  }
+
+
+  // === NEW: update both the typed pill + each falling word with ghosting ===
+  function updateTyped(){
+    // pill text + color
+    if(!typed){
+      typedTextEl.textContent=""; ghostTextEl.textContent=""; typedTextEl.className="";
+    }else{
+      typedTextEl.textContent=typed;
+      const hasPrefix = words.some(w=>w.text.startsWith(typed));
+      typedTextEl.className = hasPrefix ? "good" : "bad";
+      const firstMatch = words.find(w=>w.text.startsWith(typed));
+      ghostTextEl.textContent = firstMatch ? firstMatch.text.slice(typed.length) : "";
+    }
+
+    // per-word ghosting + highlight
+    words.forEach(w=>{
+      const starts = typed && w.text.startsWith(typed);
+      w.el.classList.toggle('match', !!starts);
+      // rebuild inner HTML: prefix normal, remainder ghost
+      if(typed && starts){
+        const pre = typed.length;
+        w.el.innerHTML = `<span class="prefix">${w.text.slice(0,pre)}</span><span class="ghost">${w.text.slice(pre)}</span>`;
+      }else{
+        w.el.textContent = w.text; // no ghost if not matching (keeps it clean)
+      }
+    });
+
+    // auto-hit on exact match
+    const hit = words.find(w=>w.text===typed);
+    if(hit) submitHit(hit);
+  }
+
+  function submitHit(w){
+    score += POINTS_BASE + Math.round(w.speed*POINTS_SPEED_FACTOR);
+    streak++; cleared++;
+    w.el.classList.add('hit');
+    setTimeout(()=>w.el.remove(),140);
+    words = words.filter(x=>x.id!==w.id);
+    typed=""; updateTyped(); levelUpIfNeeded(); updateHUD();
+  }
+
+  function loseLife(){ lives--; updateHUD(); if(lives<=0) gameOver(); }
+
+  function gameOver(){
+    running=false; paused=false; cancelAnimationFrame(rafId);
+    pauseBtn.disabled=true; restartBtn.disabled=false; showOverlay(true);
+  }
+
+  function spawnWord(){
+    const text=pick(currentWords);
+    const el=document.createElement('div'); el.className='word'; el.textContent=text;
+    board.appendChild(el);
+    const width=el.offsetWidth, maxX=Math.max(0, board.clientWidth - width - 8);
+    const x=Math.round(rand(8,maxX));
+    const speed=BASE_SPEED + (level-1)*SPEED_PER_LEVEL + rand(-6,16);
+    const obj={id:idSeq++, text, x, y:-30, speed, el};
+    el.style.left = x+'px'; el.style.top = obj.y+'px';
+    words.push(obj);
+    // immediately reflect ghosting state for the new word
+    updateTyped();
+  }
+
+  function tick(dt){
+    for(let i = words.length - 1; i >= 0; i--){
+      const w = words[i];
+      w.y += w.speed * dt;
+
+      if (w.y >= board.clientHeight - 26) {
+        // this word missed
+        w.el.classList.add('miss');
+        w.el.remove();
+        words.splice(i, 1);
+        loseLife();
+
+        // NEW: if what you've typed no longer matches any word, clear the pill
+        if (typed && !words.some(x => x.text.startsWith(typed))) {
+          typed = '';
+          updateTyped();
+        }
+        continue;
+      }
+
+      w.el.style.top = Math.round(w.y) + 'px';
+    }
+  }
+
+
+  function loop(ts){
+    if(!running) return;
+    if(!lastTs) lastTs=ts;
+    const dt = Math.min(0.05, (ts-lastTs)/1000);
+    lastTs=ts;
+
+    if(!paused){
+      spawnAcc += dt*1000;
+      if(spawnAcc >= spawnEvery){ spawnAcc=0; spawnWord(); }
+      tick(dt);
+    }
+    rafId = requestAnimationFrame(loop);
+  }
+
+  // Controls
+  function startGame(){
+    resetGame(); showOverlay(false);
+    running=true; paused=false; lastTs=0; spawnAcc=0;
+    startBtn.disabled=true; pauseBtn.disabled=false; restartBtn.disabled=false;
+    typebox.focus({preventScroll:true});
+    requestAnimationFrame(loop);
+  }
+  function pauseGame(){ if(!running) return; paused=!paused; pauseBtn.textContent = paused ? 'Resume' : 'Pause'; }
+  function resetGame(){
+    words.forEach(w => w.el.remove());
+    words.length = 0;
+
+    score = 0;
+    lives = MAX_LIVES;
+    streak = 0;
+    level = 1;
+    cleared = 0;
+    typed = '';
+
+    spawnEvery = SPAWN_START_MS;
+    spawnAcc = 0;
+
+    // IMPORTANT: reset the word pool to Level 1
+    currentWords = WORD_SETS[0];
+
+    updateTyped();
+    updateHUD();
+  }
+
+
+  function onKey(e){
+    if(!running){
+      if(!['Shift','Meta','Alt','Control'].includes(e.key)) startGame();
+      return;
+    }
+    if(e.key==='Escape'){ typed=''; updateTyped(); e.preventDefault(); return; }
+    if(e.key==='Backspace'){ typed = typed.slice(0,-1); updateTyped(); e.preventDefault(); return; }
+    if(e.key==='Enter'){
+      const hit = words.find(w=>w.text===typed);
+      if(hit) submitHit(hit);
+      typed=''; updateTyped(); e.preventDefault(); return;
+    }
+    if(/^[a-z]$/i.test(e.key)){
+      typed += e.key.toLowerCase();
+      updateTyped(); e.preventDefault(); return;
+    }
+  }
+
+  // Wire-up
+  startBtn.onclick=startGame; overlayStart.onclick=startGame; pauseBtn.onclick=pauseGame; restartBtn.onclick=resetGame;
+  document.addEventListener('keydown', onKey);
+  board.addEventListener('click', ()=>typebox.focus({preventScroll:true}));
+
+  // Init
+  showOverlay(true); updateHUD();
+})();
+</script>
+</body>
+</html>
