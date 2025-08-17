@@ -3,99 +3,146 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Pure JS Click Trainer</title>
+    <title>Pure JS Click Trainer — Cute Mode</title>
     <style>
-  :root{
-    --bg:#0b1020; --panel:#121a32; --text:#e8ecff; --muted:#aab3d0;
-    --ok:#23c55e;  /* green = left click */
-    --warn:#ef4444;/* red   = right click */
-    --info:#3b82f6;/* blue  = double click */
-  }
-  * { box-sizing: border-box; }
-  body{
-    margin:0; font-family: system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-    background: radial-gradient(1200px 600px at 70% -10%, #1a2550 0%, var(--bg) 40%, #070b16 100%);
-    color: var(--text); display:flex; min-height:100svh; align-items:center; justify-content:center;
-  }
-  .wrap{ width:min(980px,95vw); }
-  header{
-    display:flex; gap:16px; align-items:center; justify-content:space-between; margin-bottom:10px;
-  }
-  .stats{
-    display:flex; gap:18px; flex-wrap:wrap;
-    background:color-mix(in oklab, var(--panel) 85%, transparent);
-    border:1px solid #223157; padding:10px 14px; border-radius:14px;
-  }
-  .stat b{ font-size:1.1rem }
-  .hint{ color:var(--muted); font-size:.9rem }
-  .controls{ display:flex; gap:10px; align-items:center }
-  button{
-    background:#2d3a72; color:var(--text); border:none; border-radius:12px; padding:10px 16px;
-    font-weight:600; cursor:pointer; transition:transform .06s ease, opacity .2s ease;
-  }
-  button:hover{ transform:translateY(-1px) }
-  button:disabled{ opacity:.5; cursor:not-allowed }
-  input[type="number"]{
-    width:80px; padding:8px 10px; border-radius:10px; border:1px solid #31406f; background:#162148; color:var(--text);
-  }
+    :root{
+      /* Light, playful palette (aligns with whack-a-mole vibe) */
+      --bg1:#faf8ff; --bg2:#f7f3ff;
+      --ink:#2b2546; --muted:#6a648a;
+      --panel:#ffffff; --panel-2:#f3efff;
+      --line:#ebe7ff;
+      --ok:#42c58a;    /* green = left click */
+      --warn:#ff6b81;  /* red   = right click */
+      --info:#69a6ff;  /* blue  = double click */
+      --shadow: 0 12px 30px rgba(43,37,70,.12);
+      --shadow-2: 0 6px 16px rgba(43,37,70,.10);
+      --radius:18px; --chip:12px;
+    }
 
-  .arena{
-    position:relative; height:520px; border-radius:18px; overflow:hidden;
-    background: repeating-linear-gradient(135deg, #0d1430 0 18px, #0f1838 18px 36px);
-    border:1px solid #223157; user-select:none; -webkit-user-select:none;
-    box-shadow: inset 0 0 0 1px #1b284f, 0 10px 30px rgba(0,0,0,.4);
-  }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font:16px/1.45 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      color:var(--ink);
+      background:
+        radial-gradient(1200px 800px at 100% -10%, #e7e1ff 0%, transparent 60%),
+        radial-gradient(900px 600px at -20% 20%, #ffeaf0 0%, transparent 55%),
+        linear-gradient(var(--bg1), var(--bg2) 60%);
+      display:flex; align-items:center; justify-content:center; min-height:100svh;
+    }
 
+    .wrap{ width:min(980px,95vw); padding:16px 16px 28px }
 
-.target {
-  position:absolute;
-  width:70px;
-  height:70px;
-  border-radius:50%;
-  display:grid;
-  place-items:center;
-  font-weight:700;
-  font-size:.9rem;   /* a bit bigger */
-  color:white;
-  text-align:center;
-  text-shadow:0 1px 3px rgba(0,0,0,.35);
-  box-shadow:0 10px 24px rgba(0,0,0,.35), inset 0 0 0 2px rgba(255,255,255,.12);
-  transform:translate(-50%,-50%) scale(.9);
-  opacity:0;
-  transition:opacity .15s ease, transform .15s ease;
-}
+    header{
+      display:flex; gap:16px; align-items:center; justify-content:space-between; margin-bottom:10px;
+    }
 
+    /* Legend chips */
+    .legend{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
+    .dot{
+      height:26px; min-width:58px; padding:0 10px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:.78rem; font-weight:700; color:#fff;
+      border-radius:999px; box-shadow: var(--shadow-2);
+    }
+    .dot.left{  background: linear-gradient(180deg, #5fe3a6, var(--ok)); }
+    .dot.right{ background: linear-gradient(180deg, #ff8aa0, var(--warn)); }
+    .dot.double{background: linear-gradient(180deg, #8fc0ff, var(--info)); }
+    .hint{ color:var(--muted); font-size:.92rem }
 
-  .target.show{ opacity:1; transform:translate(-50%,-50%) scale(1) }
-  .target.left  { background: linear-gradient(145deg, #39e07a, var(--ok)); }
-  .target.right { background: linear-gradient(145deg, #ff6b6b, var(--warn)); }
-  .target.double{ background: linear-gradient(145deg, #69a6ff, var(--info)); }
-  .legend{ display:flex; gap:10px; align-items:center; }
+    /* Controls */
+    .controls{ display:flex; gap:10px; align-items:center; flex-wrap:wrap }
+    button{
+      background:linear-gradient(180deg, #fff, #f3f0ff);
+      color:var(--ink); border:1px solid var(--line);
+      border-radius:14px; padding:10px 16px; font-weight:800; letter-spacing:.2px;
+      cursor:pointer; box-shadow: var(--shadow); transition: transform .08s ease, filter .12s ease;
+    }
+    button:hover{ transform: translateY(-1px) }
+    button:active{ transform: translateY(0); filter:brightness(.98) }
+    button:disabled{ opacity:.55; cursor:not-allowed; filter:grayscale(.1) }
 
-  .dot{
-  width:38px; height:20px; border-radius:12px;
-  display:flex; align-items:center; justify-content:center;
-  font-size:.75rem; font-weight:600; color:white;
-}
-.dot.left   { background:var(--ok); }
-.dot.right  { background:var(--warn); }
-.dot.double { background:var(--info); }
+    input[type="number"]{
+      width:90px; padding:8px 10px;
+      border-radius:12px; border:1px solid var(--line);
+      background:#fff; color:var(--ink); box-shadow: var(--shadow-2);
+      font-weight:600;
+    }
 
+    /* Stats -> cute chips */
+    .stats{
+      display:flex; gap:12px; flex-wrap:wrap; margin:12px 0 14px;
+    }
+    .stat{
+      display:flex; gap:8px; align-items:center;
+      background: linear-gradient(180deg, var(--panel), var(--panel-2));
+      border:1px solid var(--line); border-radius: var(--chip);
+      padding:8px 12px; box-shadow: var(--shadow); font-weight:700;
+    }
+    .stat b{ font-variant-numeric: tabular-nums; font-size:1.05rem }
 
-  .endcard{
-    position:absolute; inset:0; display:none; place-items:center; background:rgba(3,7,18,.75); backdrop-filter: blur(4px);
-  }
-  .endcard.show{ display:grid }
-  .card{
-    background:var(--panel); border:1px solid #223157; border-radius:16px; padding:18px 20px; width:min(520px,92%);
-    text-align:center; box-shadow: 0 20px 50px rgba(0,0,0,.5);
-  }
-  .card h2{ margin:0 0 8px }
-  .kbd{
-    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:.9rem;
-    background:#0e1632; border:1px solid #283566; padding:2px 6px; border-radius:6px;
-  }
-</style>
+    /* Arena card */
+    .arena{
+      position:relative; height:520px; border-radius:var(--radius); overflow:hidden;
+      background:
+        radial-gradient(160px 60px at 70% 10%, #fff6 0%, #fff0 70%),
+        radial-gradient(140px 60px at 25% 12%, #fff6 0%, #fff0 72%),
+        repeating-linear-gradient(0deg, #faf9ff 0 18px, #f2efff 18px 19px);
+      border:1px solid var(--line);
+      box-shadow: var(--shadow);
+      user-select:none; -webkit-user-select:none;
+    }
+
+    /* Targets */
+    .target{
+      position:absolute; width:70px; height:70px; border-radius:50%;
+      display:grid; place-items:center; font-weight:800; font-size:.9rem; color:white;
+      text-shadow:0 1px 3px rgba(0,0,0,.25);
+      box-shadow: 0 12px 26px rgba(0,0,0,.20), inset 0 0 0 2px rgba(255,255,255,.18);
+      transform:translate(-50%,-50%) scale(.86); opacity:0;
+      transition:opacity .14s ease, transform .14s ease, filter .14s ease;
+      border:1px solid #ffffff22;
+    }
+    .target.show{ opacity:1; transform:translate(-50%,-50%) scale(1) }
+    .target.left  { background: linear-gradient(145deg, #58ebb3, var(--ok)); }
+    .target.right { background: linear-gradient(145deg, #ff8c97, var(--warn)); }
+    .target.double{ background: linear-gradient(145deg, #9accff, var(--info)); }
+    .target:active{ filter: brightness(.96) }
+
+    /* End overlay card */
+    .endcard{
+      position:absolute; inset:0; display:none; place-items:center;
+      background:linear-gradient(#0b062d22,#0b062d55); backdrop-filter: blur(3px);
+    }
+    .endcard.show{ display:grid }
+    .card{
+      background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:18px 20px; width:min(520px,92%);
+      text-align:center; box-shadow: var(--shadow);
+    }
+    .card h2{ margin:0 0 8px }
+
+    .kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:.9rem;
+      background:#fff; border:1px solid var(--line); padding:2px 6px; border-radius:6px; color:var(--ink);
+      box-shadow: var(--shadow-2);
+    }
+
+    /* Feedback animations */
+    @keyframes pulse{ 0%{transform:scale(1)} 40%{transform:scale(1.12)} 100%{transform:scale(1)} }
+    @keyframes shake{ 0%,100%{transform:translateX(0)} 25%{transform:translateX(-3px)} 75%{transform:translateX(3px)} }
+    .pulse{ animation: pulse .22s ease }
+    .shake{ animation: shake .18s ease }
+
+    /* Click ripple */
+    .ripple{
+      position:absolute; pointer-events:none; inset:auto;
+      width:14px; height:14px; border-radius:999px; background:#0002;
+      transform: translate(-50%,-50%) scale(1);
+      animation: pop .6s ease forwards;
+    }
+    @keyframes pop{ to { transform: translate(-50%,-50%) scale(12); opacity:0 } }
+  </style>
 </head>
 <body>
 <div class="wrap">
@@ -113,7 +160,6 @@
             <button id="resetBtn" disabled>Reset</button>
         </div>
     </header>
-
 
     <div class="stats">
         <div class="stat">Time: <b id="time">60</b>s</div>
@@ -135,193 +181,206 @@
 </div>
 
 <script>
-(() => {
-  const arena = document.getElementById('arena');
-  const startBtn = document.getElementById('startBtn');
-  const resetBtn = document.getElementById('resetBtn');
-  const secsInput = document.getElementById('seconds');
-  const timeEl = document.getElementById('time');
-  const scoreEl = document.getElementById('score');
-  const missEl  = document.getElementById('miss');
-  const overlay = document.getElementById('overlay');
-  const finalScore = document.getElementById('finalScore');
-  const finalMiss = document.getElementById('finalMiss');
-  const playAgain = document.getElementById('playAgain');
+  (() => {
+    const arena = document.getElementById('arena');
+    const startBtn = document.getElementById('startBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const secsInput = document.getElementById('seconds');
+    const timeEl = document.getElementById('time');
+    const scoreEl = document.getElementById('score');
+    const missEl  = document.getElementById('miss');
+    const overlay = document.getElementById('overlay');
+    const finalScore = document.getElementById('finalScore');
+    const finalMiss = document.getElementById('finalMiss');
+    const playAgain = document.getElementById('playAgain');
 
-  const TARGET_SIZE = 52; // px
-  const MODES = ['left','right','double']; // green / red / blue
-  const MODE_WEIGHTS = { left: 0.45, right: 0.35, double: 0.20 };
+    const TARGET_SIZE = 52; // px
+    const MODES = ['left','right','double']; // green / red / blue
+    const MODE_WEIGHTS = { left: 0.45, right: 0.35, double: 0.20 };
 
-  const state = {
-    running:false, timerId:null, timeLeft:60, score:0, mistakes:0, target:null
-  };
+    const state = {
+      running:false, timerId:null, timeLeft:60, score:0, mistakes:0, target:null
+    };
 
-  function pickMode() {
-    const r = Math.random();
-    let acc = 0;
-    for (const m of MODES) {
-      acc += MODE_WEIGHTS[m];
-      if (r <= acc) return m;
+    function pickMode() {
+      const r = Math.random();
+      let acc = 0;
+      for (const m of MODES) { acc += MODE_WEIGHTS[m]; if (r <= acc) return m; }
+      return 'left';
     }
-    return 'left';
-  }
 
-  function randPos() {
-    const rect = arena.getBoundingClientRect();
-    const pad = TARGET_SIZE * 0.65;
-    const x = Math.random() * (rect.width - pad*2) + pad;
-    const y = Math.random() * (rect.height - pad*2) + pad;
-    return { x, y };
-  }
+    function randPos() {
+      const rect = arena.getBoundingClientRect();
+      const pad = TARGET_SIZE * 0.65;
+      const x = Math.random() * (rect.width - pad*2) + pad;
+      const y = Math.random() * (rect.height - pad*2) + pad;
+      return { x, y };
+    }
 
-  function clearTarget() {
-    if (state.target && state.target.isConnected) arena.removeChild(state.target);
-    state.target = null;
-  }
+    function clearTarget() {
+      if (state.target && state.target.isConnected) arena.removeChild(state.target);
+      state.target = null;
+    }
 
-  function spawnTarget() {
-    clearTarget();
-    const t = document.createElement('div');
-    const mode = pickMode();
-    const { x, y } = randPos();
-    t.className = `target ${mode}`;
-    t.dataset.mode = mode;
-    t.style.left = `${x}px`;
-    t.style.top  = `${y}px`;
-    t.title = mode === 'left' ? 'Left-click'
-             : mode === 'right' ? 'Right-click'
-             : 'Double-click';
-    t.textContent = mode === 'left' ? 'Left' :
-                mode === 'right' ? 'Right' :
-                '2x';
+    function spawnTarget() {
+      clearTarget();
+      const t = document.createElement('div');
+      const mode = pickMode();
+      const { x, y } = randPos();
+      t.className = `target ${mode}`;
+      t.dataset.mode = mode;
+      t.style.left = `${x}px`;
+      t.style.top  = `${y}px`;
+      t.title = mode === 'left' ? 'Left-click'
+               : mode === 'right' ? 'Right-click'
+               : 'Double-click';
+      t.textContent = mode === 'left' ? 'Left' : mode === 'right' ? 'Right' : '2x';
 
-    arena.appendChild(t);
-    // Animate in
-    requestAnimationFrame(() => t.classList.add('show'));
-    state.target = t;
-  }
+      arena.appendChild(t);
+      requestAnimationFrame(() => t.classList.add('show'));
+      state.target = t;
+    }
 
-  function startGame() {
-    if (state.running) return;
-    state.timeLeft = clampSec(+secsInput.value || 60);
-    state.score = 0; state.mistakes = 0;
-    updateHUD();
-    overlay.classList.remove('show');
-    startBtn.disabled = true; resetBtn.disabled = false; secsInput.disabled = true;
-    state.running = true;
-    spawnTarget();
-    state.timerId = setInterval(tick, 1000);
-  }
-
-  function resetGame() {
-    stopGame();
-    state.timeLeft = clampSec(+secsInput.value || 60);
-    state.score = 0; state.mistakes = 0;
-    updateHUD(); clearTarget();
-    startBtn.disabled = false; resetBtn.disabled = true; secsInput.disabled = false;
-    overlay.classList.remove('show');
-  }
-
-  function stopGame() {
-    state.running = false;
-    clearInterval(state.timerId); state.timerId = null;
-    startBtn.disabled = false; secsInput.disabled = false;
-  }
-
-  function tick() {
-    if (!state.running) return;
-    state.timeLeft -= 1;
-    updateHUD();
-    if (state.timeLeft <= 0) {
-      endGame();
-    } else if (!state.target) {
-      // If target was removed without respawn (edge), ensure one exists
+    function startGame() {
+      if (state.running) return;
+      state.timeLeft = clampSec(+secsInput.value || 60);
+      state.score = 0; state.mistakes = 0;
+      updateHUD();
+      overlay.classList.remove('show');
+      startBtn.disabled = true; resetBtn.disabled = false; secsInput.disabled = true;
+      state.running = true;
       spawnTarget();
+      state.timerId = setInterval(tick, 1000);
     }
-  }
 
-  function endGame() {
-    stopGame();
-    clearTarget();
-    resetBtn.disabled = true;
-    finalScore.textContent = state.score;
-    finalMiss.textContent = state.mistakes;
-    overlay.classList.add('show');
-  }
-
-  function updateHUD() {
-    timeEl.textContent = Math.max(0, state.timeLeft);
-    scoreEl.textContent = state.score;
-    missEl.textContent = state.mistakes;
-  }
-
-  function clampSec(v){ return Math.max(10, Math.min(300, v|0)); }
-
-  function handleHit(target) {
-    // Consume and respawn
-    target.classList.remove('show');
-    setTimeout(() => {
-      if (target.isConnected) arena.removeChild(target);
-      if (state.running) spawnTarget();
-    }, 120);
-  }
-
-  // Core input handling (no libraries)
-  arena.addEventListener('click', (e) => {
-    if (!state.running) return;
-    const t = e.target;
-    if (!(t && t.classList.contains('target'))) return;
-
-    const mode = t.dataset.mode;
-    // Left-click is a normal click. Ignore single clicks on double mode
-    if (mode === 'left') {
-      state.score += 1; updateHUD(); handleHit(t);
-    } else if (mode !== 'double') {
-      state.mistakes += 1; updateHUD();
+    function resetGame() {
+      stopGame();
+      state.timeLeft = clampSec(+secsInput.value || 60);
+      state.score = 0; state.mistakes = 0;
+      updateHUD(); clearTarget();
+      startBtn.disabled = false; resetBtn.disabled = true; secsInput.disabled = false;
+      overlay.classList.remove('show');
     }
-  });
 
-  // Right-click (contextmenu). Prevent menu and treat as right.
-  arena.addEventListener('contextmenu', (e) => {
-    if (!state.running) return;
-    e.preventDefault();
-    const t = e.target;
-    if (!(t && t.classList.contains('target'))) return;
-    const mode = t.dataset.mode;
-    if (mode === 'right') {
-      state.score += 1; updateHUD(); handleHit(t);
-    } else {
-      state.mistakes += 1; updateHUD();
+    function stopGame() {
+      state.running = false;
+      clearInterval(state.timerId); state.timerId = null;
+      startBtn.disabled = false; secsInput.disabled = false;
     }
-  });
 
-  // Double-click specifically for double targets.
-  arena.addEventListener('dblclick', (e) => {
-    if (!state.running) return;
-    const t = e.target;
-    if (!(t && t.classList.contains('target'))) return;
-    const mode = t.dataset.mode;
-    if (mode === 'double') {
-      state.score += 2; updateHUD(); handleHit(t);
-    } else {
-      // If the user double-clicked a non-double target, count as a mistake once.
-      state.mistakes += 1; updateHUD();
+    function tick() {
+      if (!state.running) return;
+      state.timeLeft -= 1;
+      updateHUD();
+      if (state.timeLeft <= 0) {
+        endGame();
+      } else if (!state.target) {
+        spawnTarget();
+      }
     }
-  });
 
-  // Controls
-  startBtn.addEventListener('click', startGame);
-  resetBtn.addEventListener('click', resetGame);
-  playAgain.addEventListener('click', () => { resetGame(); startGame(); });
+    function endGame() {
+      stopGame();
+      clearTarget();
+      resetBtn.disabled = true;
+      finalScore.textContent = state.score;
+      finalMiss.textContent = state.mistakes;
+      overlay.classList.add('show');
+    }
 
-  // Keyboard quick start
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !state.running) startGame();
-  });
+    function updateHUD() {
+      timeEl.textContent = Math.max(0, state.timeLeft);
+      scoreEl.textContent = state.score;
+      missEl.textContent = state.mistakes;
+    }
 
-  // Initialize HUD
-  updateHUD();
-})();
-</script>
+    function clampSec(v){ return Math.max(10, Math.min(300, v|0)); }
+
+    function handleHit(target) {
+      target.classList.remove('show');
+      setTimeout(() => {
+        if (target.isConnected) arena.removeChild(target);
+        if (state.running) spawnTarget();
+      }, 120);
+    }
+
+    // Micro-feedback helpers
+    function pulse(el){ el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse'); }
+    function shake(el){ el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
+
+    // Click rippleAt (inside arena only)
+    function rippleAt(e){
+      const rect = arena.getBoundingClientRect();
+      const x = e.clientX - rect.left;  // viewport -> local
+      const y = e.clientY - rect.top;
+
+      const r = document.createElement('span');
+      r.className = 'ripple';
+      r.style.left = x + 'px';
+      r.style.top  = y + 'px';
+      arena.appendChild(r);
+      setTimeout(() => r.remove(), 600);
+    }
+
+
+
+    // Core input handling
+    arena.addEventListener('click', (e) => {
+      if (!state.running) return;
+      rippleAt(e);
+      const t = e.target;
+      if (!(t && t.classList.contains('target'))) return;
+
+      const mode = t.dataset.mode;
+      if (mode === 'left') {
+        state.score += 1; updateHUD(); pulse(scoreEl); handleHit(t);
+      } else if (mode !== 'double') {
+        state.mistakes += 1; updateHUD(); shake(missEl);
+      }
+    });
+
+    // Right-click
+    arena.addEventListener('contextmenu', (e) => {
+      if (!state.running) return;
+      e.preventDefault();
+      rippleAt(e);
+      const t = e.target;
+      if (!(t && t.classList.contains('target'))) return;
+      const mode = t.dataset.mode;
+      if (mode === 'right') {
+        state.score += 1; updateHUD(); pulse(scoreEl); handleHit(t);
+      } else {
+        state.mistakes += 1; updateHUD(); shake(missEl);
+      }
+    });
+
+    // Double-click
+    arena.addEventListener('dblclick', (e) => {
+      if (!state.running) return;
+      rippleAt(e);
+      const t = e.target;
+      if (!(t && t.classList.contains('target'))) return;
+      const mode = t.dataset.mode;
+      if (mode === 'double') {
+        state.score += 2; updateHUD(); pulse(scoreEl); handleHit(t);
+      } else {
+        state.mistakes += 1; updateHUD(); shake(missEl);
+      }
+    });
+
+    // Controls
+    startBtn.addEventListener('click', startGame);
+    resetBtn.addEventListener('click', resetGame);
+    playAgain.addEventListener('click', () => { resetGame(); startGame(); });
+
+    // Keyboard quick start
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !state.running) startGame();
+    });
+
+    // Init
+    updateHUD();
+  })();
+  </script>
 </body>
 </html>
