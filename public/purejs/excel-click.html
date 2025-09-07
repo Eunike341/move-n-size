@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Excel-Click Trainer — Pure JavaScript</title>
+  <style>
+    :root{
+      --bg:#f8f9ff; --ink:#1f2430; --muted:#56607a;
+      --accent:#6b8afd; --good:#2fb36e; --bad:#ff5c6e;
+      --panel:#ffffff; --line:#e6e9f5; --header:#f1f3fe;
+      --select:#cfe1ff80; --select-strong:#6b8afd55; --focus:#6b8afd;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font:16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"; color:var(--ink); background:linear-gradient(180deg, var(--bg), #ffffff)}
+    .wrap{max-width:980px;margin:32px auto;padding:0 16px}
+    header{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+    .title{font-weight:800;font-size:20px}
+    .card{background:var(--panel); border:1px solid var(--line); border-radius:16px; box-shadow:0 6px 18px rgba(20,30,60,.06)}
+    .controls{padding:14px 16px; display:flex; gap:12px; align-items:center; flex-wrap:wrap}
+    .pill{background:var(--header); border:1px solid var(--line); padding:8px 12px; border-radius:999px; font-weight:600}
+    .spacer{flex:1}
+    button{border:1px solid var(--line); background:var(--panel); padding:8px 14px; border-radius:10px; cursor:pointer; font-weight:700}
+    button.primary{background:var(--accent); color:#fff; border-color:transparent}
+    button:disabled{opacity:.5; cursor:not-allowed}
+
+    /* Grid shell */
+    .grid-wrap{overflow:auto; border-top:1px solid var(--line); border-radius:0 0 16px 16px}
+    .grid{position:relative; user-select:none;}
+    .row{display:grid}
+    .cell, .hcol, .hrow, .corner{border-right:1px solid var(--line); border-bottom:1px solid var(--line)}
+    .hcol, .hrow, .corner{background:var(--header); font-weight:700; color:var(--muted)}
+    .hcol, .hrow, .cell{display:flex; align-items:center; justify-content:center}
+    .cell{background:#fff; height:36px; min-width:80px}
+    .hcol{height:32px}
+    .hrow{width:46px}
+    .corner{width:46px; height:32px; border-top-left-radius:0;}
+
+    /* Hover & selection states */
+    .cell:hover{outline:2px solid #0000; background:linear-gradient(#fff, #fff) padding-box,
+                 radial-gradient(circle at center, #0000 18px, var(--select) 19px) border-box}
+    .selected{background:linear-gradient(#fff, #fff) padding-box, linear-gradient(var(--select), var(--select)) border-box}
+    .selected-strong{outline:2px dashed var(--focus)}
+    .hcol.active, .hrow.active{background:linear-gradient(0deg, #4b65c2, var(--header)); color:#374060}
+
+    .feedback{padding:8px 12px; border-radius:10px; font-weight:700}
+    .feedback.ok{background:#e9f8f0; color:#137a46; border:1px solid #bfe6d1}
+    .feedback.no{background:#ffe9ec; color:#a41528; border:1px solid #ffd0d6}
+
+    .explain{font-size:14px; color:var(--muted)}
+    .legend{display:flex; gap:10px; align-items:center; font-size:14px; color:var(--muted)}
+    .swatch{width:14px; height:14px; border-radius:3px; border:1px solid var(--line)}
+    .swatch.sel{background:var(--select)}
+    .swatch.box{background:var(--select-strong)}
+
+    @media (max-width:720px){
+      .cell{min-width:64px}
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title">Excel‑Click Trainer (Rows, Columns & Cells)</div>
+  </header>
+
+  <section class="card">
+    <div class="controls">
+      <div id="task" class="pill">Click Start to begin a 5‑minute round</div>
+      <div id="explain" class="explain"></div>
+      <div class="spacer"></div>
+      <div class="pill" id="timer">⏳ 01:00</div>
+      <button id="startBtn">Start</button>
+      <button id="resetBtn">Reset</button>
+
+      <button id="checkBtn" class="primary">Check</button>
+      <button id="nextBtn">Next</button>
+      <div class="pill" id="score">Score: 0</div>
+    </div>
+    <div class="grid-wrap">
+      <div id="grid" class="grid" aria-label="Spreadsheet training grid"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  // ==== Config ====
+  const ROWS = 10;
+  const COLS = 10;
+  const ROUND_MINUTES = 1; // round length
+  const COL_LETTERS = [...Array(COLS)].map((_,i)=> colName(i));
+
+  // ==== State ====
+  let anchor = null; // {r,c} when drag starts
+  let sel = {r1:1,c1:1,r2:1,c2:1}; // selection bounds (1-based indexes)
+  let target = null; // {r1,c1,r2,c2}
+  let score = 0;
+  let attempts = 0, correctAns = 0;
+  let remaining = ROUND_MINUTES * 60; // seconds
+  let timerId = null; let running = false; let locked = true;
+
+  // ==== DOM ====
+  const grid = document.getElementById('grid');
+  const taskEl = document.getElementById('task');
+  const explainEl = document.getElementById('explain');
+  const checkBtn = document.getElementById('checkBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const scoreEl = document.getElementById('score');
+  const timerEl = document.getElementById('timer');
+  const startBtn = document.getElementById('startBtn');
+  const resetBtn = document.getElementById('resetBtn');
+
+  // Build grid DOM
+  buildGrid();
+  newTask();
+  updateTimerDisplay();
+  setLocked(true); // lock until Start pressed
+
+  checkBtn.addEventListener('click', checkAnswer);
+  nextBtn.addEventListener('click', newTask);
+  startBtn.addEventListener('click', ()=>{ running ? stopTimer() : startTimer(); });
+  resetBtn.addEventListener('click', resetRound);
+
+  // Keyboard navigation
+  document.addEventListener('keydown', e=>{
+    if(locked) return;
+    const step = (key)=>{
+      const d = {ArrowUp:[-1,0], ArrowDown:[1,0], ArrowLeft:[0,-1], ArrowRight:[0,1]}[key];
+      if(!d) return false;
+      const [dr,dc]=d; const nr = clamp(sel.r2+dr,1,ROWS); const nc = clamp(sel.c2+dc,1,COLS);
+      if(e.shiftKey){ sel = normalize(sel.r1, sel.c1, nr, nc); }
+      else { sel = normalize(nr, nc, nr, nc); }
+      paintSelection();
+      return true;
+    };
+    if(step(e.key)) e.preventDefault();
+  });
+
+  // ==== Functions ====
+  function buildGrid(){
+    // Compute template columns: row header + cells
+    grid.innerHTML = '';
+    const headerRow = document.createElement('div');
+    headerRow.className = 'row';
+    headerRow.style.gridTemplateColumns = `46px ${'1fr '.repeat(COLS).trim()}`;
+
+    const corner = div('corner'); corner.textContent = '';
+    headerRow.appendChild(corner);
+    for(let c=1;c<=COLS;c++){
+      const hc = div('hcol'); hc.textContent = COL_LETTERS[c-1]; hc.dataset.c=c;
+      headerRow.appendChild(hc);
+    }
+    grid.appendChild(headerRow);
+
+    for(let r=1;r<=ROWS;r++){
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.style.gridTemplateColumns = `46px ${'1fr '.repeat(COLS).trim()}`;
+
+      const hr = div('hrow'); hr.textContent = r; hr.dataset.r=r; row.appendChild(hr);
+
+      for(let c=1;c<=COLS;c++){
+        const cell = div('cell');
+        cell.dataset.r=r; cell.dataset.c=c; cell.tabIndex=0; cell.setAttribute('role','gridcell');
+        // Mouse selection
+        cell.addEventListener('mousedown', (e)=>{
+          if(locked) return;
+          anchor = {r:parseInt(cell.dataset.r), c:parseInt(cell.dataset.c)};
+          sel = normalize(anchor.r, anchor.c, anchor.r, anchor.c);
+          paintSelection();
+          e.preventDefault();
+        });
+        cell.addEventListener('mouseenter', ()=>{
+          if(locked) return;
+          if(anchor){
+            const r=parseInt(cell.dataset.r), c=parseInt(cell.dataset.c);
+            sel = normalize(anchor.r, anchor.c, r, c);
+            paintSelection();
+          }
+        });
+        cell.addEventListener('click', ()=>{
+          if(locked) return;
+          const r=parseInt(cell.dataset.r), c=parseInt(cell.dataset.c);
+          sel = normalize(r,c,r,c);
+          paintSelection();
+        });
+        row.appendChild(cell);
+      }
+      grid.appendChild(row);
+    }
+
+    // Finish drag on mouseup anywhere
+    window.addEventListener('mouseup', ()=>{ anchor=null; });
+  }
+
+  function newTask(){
+    if(locked && attempts>0) return; // don't change task while locked except at start
+    // Randomly choose cell or small range (up to 3x3)
+    const isRange = Math.random() < 0.5; // 50% chance
+    if(isRange){
+      const w = rand(2, Math.min(3, COLS));
+      const h = rand(2, Math.min(3, ROWS));
+      const c1 = rand(1, COLS - w + 1);
+      const r1 = rand(1, ROWS - h + 1);
+      target = normalize(r1, c1, r1+h-1, c1+w-1);
+    } else {
+      const r = rand(1, ROWS); const c = rand(1, COLS);
+      target = normalize(r,c,r,c);
+    }
+    sel = normalize(1,1,1,1);
+    paintSelection();
+    updateTaskText();
+    clearFeedback();
+  }
+
+  function updateTaskText(){
+    const t = target;
+    const label = (r,c)=>`${COL_LETTERS[c-1]}${r}`;
+    let text, explain;
+    if(t.r1===t.r2 && t.c1===t.c2){
+      const cell = label(t.r1,t.c1);
+      text = `Click cell ${cell}`;
+      explain = `Columns use LETTERS → ${COL_LETTERS[t.c1-1]}; Rows use NUMBERS → ${t.r1}. A cell is where a column and row meet: ${cell}.`;
+    } else {
+      text = `Select the range ${label(t.r1,t.c1)}:${label(t.r2,t.c2)}`;
+      explain = `A range is a rectangle from the top‑left cell to the bottom‑right cell.`;
+    }
+    taskEl.textContent = text;
+    explainEl.textContent = explain;
+  }
+
+  function paintSelection(){
+    // Clear states
+    grid.querySelectorAll('.cell, .hcol, .hrow').forEach(el=>{
+      el.classList.remove('selected','selected-strong','active');
+      el.style.outline = '';
+    });
+    // Paint selection cells
+    const r1=Math.min(sel.r1, sel.r2), r2=Math.max(sel.r1, sel.r2);
+    const c1=Math.min(sel.c1, sel.c2), c2=Math.max(sel.c1, sel.c2);
+    for(let r=r1; r<=r2; r++){
+      const hr = grid.querySelector(`.hrow[data-r="${r}"]`);
+      if(hr) hr.classList.add('active');
+      for(let c=c1; c<=c2; c++){
+        const cell = grid.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+        if(cell) cell.classList.add('selected');
+      }
+    }
+    for(let c=c1; c<=c2; c++){
+      const hc = grid.querySelector(`.hcol[data-c="${c}"]`);
+      if(hc) hc.classList.add('active');
+    }
+    // Draw border outline around the rectangle
+    const tl = grid.querySelector(`.cell[data-r="${r1}"][data-c="${c1}"]`);
+    const br = grid.querySelector(`.cell[data-r="${r2}"][data-c="${c2}"]`);
+    if(tl && br){
+      const rectTL = tl.getBoundingClientRect();
+      const rectBR = br.getBoundingClientRect();
+      // Create or reuse overlay div
+      let overlay = grid._overlay;
+      if(!overlay){ overlay = document.createElement('div'); grid._overlay = overlay; grid.appendChild(overlay); }
+      const wrapRect = grid.getBoundingClientRect();
+      Object.assign(overlay.style, {
+        position:'absolute', pointerEvents:'none',
+        left: (rectTL.left - wrapRect.left) + 'px',
+        top: (rectTL.top - wrapRect.top) + 'px',
+        width: (rectBR.right - rectTL.left) + 'px',
+        height: (rectBR.bottom - rectTL.top) + 'px',
+        border: '2px dashed var(--focus)', borderRadius:'4px'
+      });
+    }
+  }
+
+  function checkAnswer(){
+    if(locked) return;
+    attempts++;
+    const ok = sameRect(sel, target);
+    if(ok) correctAns++;
+    flashFeedback(ok);
+    if(ok){ score += (isSingle(target)? 5 : 10); scoreEl.textContent = `Score: ${score}`; }
+  }
+
+  function flashFeedback(ok){
+    removeFeedback();
+    const msg = document.createElement('div');
+    msg.className = `feedback ${ok? 'ok':'no'}`;
+    msg.textContent = ok ? '✅ Correct! Great job.' : '❌ Not quite. Try again!';
+    taskEl.after(msg);
+    setTimeout(()=>{ msg.style.transition='transform .2s ease, opacity .2s'; msg.style.transform='scale(1.02)'; msg.style.opacity='0.96'; }, 0);
+    setTimeout(()=>{ if(ok && running) newTask(); }, 700);
+  }
+  function clearFeedback(){ removeFeedback(); }
+  function removeFeedback(){ const old = document.querySelector('.feedback'); if(old) old.remove(); }
+
+  // ==== Timer ====
+  function startTimer(){
+    if(running) return;
+    running = true; setLocked(false);
+    timerId = setInterval(()=>{
+      remaining = Math.max(remaining-1, 0);
+      updateTimerDisplay();
+      if(remaining === 0){ stopTimer(); gameOver(); }
+    }, 1000);
+    startBtn.textContent = 'Pause';
+  }
+  function stopTimer(){
+    if(timerId) clearInterval(timerId);
+    timerId = null; running = false;
+    startBtn.textContent = 'Resume';
+  }
+  function resetRound(){
+    stopTimer();
+    remaining = ROUND_MINUTES * 60; updateTimerDisplay();
+    score = 0; attempts = 0; correctAns = 0; scoreEl.textContent = `Score: ${score}`;
+    newTask();
+    setLocked(true);
+    startBtn.textContent = 'Start';
+  }
+  function updateTimerDisplay(){ if(timerEl){ timerEl.textContent = `⏳ ${fmt(remaining)}`; } }
+  function fmt(s){ const m=Math.floor(s/60).toString().padStart(2,'0'); const ss=(s%60).toString().padStart(2,'0'); return `${m}:${ss}`; }
+  function gameOver(){
+    setLocked(true);
+    const msg = document.createElement('div');
+    msg.className = 'feedback ok';
+    msg.textContent = `⏰ Time's up! Score ${score}. Correct ${correctAns} of ${attempts}.`;
+    taskEl.after(msg);
+  }
+  function setLocked(v){
+    locked = v;
+    grid.style.pointerEvents = v ? 'none' : 'auto';
+    checkBtn.disabled = v; nextBtn.disabled = v;
+  }
+
+  // ==== Utils ====
+  function div(cls){ const d=document.createElement('div'); d.className=cls; return d; }
+  function rand(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+  function clamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
+  function colName(index){ // 0-based -> Excel letters (A, B, ..., Z, AA, AB ...)
+    let n = index+1, s='';
+    while(n>0){ const r=(n-1)%26; s=String.fromCharCode(65+r)+s; n=Math.floor((n-1)/26); }
+    return s;
+  }
+  function normalize(r1,c1,r2,c2){ return {r1:Math.min(r1,r2), c1:Math.min(c1,c2), r2:Math.max(r1,r2), c2:Math.max(c1,c2)}; }
+  function sameRect(a,b){ return a.r1===b.r1 && a.c1===b.c1 && a.r2===b.r2 && a.c2===b.c2; }
+  function isSingle(t){ return t.r1===t.r2 && t.c1===t.c2; }
+})();
+</script>
+</body>
+</html>
