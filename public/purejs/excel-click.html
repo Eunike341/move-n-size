@@ -24,6 +24,10 @@
     button.primary{background:var(--accent); color:#fff; border-color:transparent}
     button:disabled{opacity:.5; cursor:not-allowed}
 
+    /* Name input */
+    .namebox{border:1px solid var(--line); background:var(--panel); padding:8px 12px; border-radius:10px; font-weight:600; min-width:160px}
+    .namebox:focus{outline:2px solid var(--focus); box-shadow:0 0 0 3px #6b8afd22}
+
     /* Grid shell */
     .grid-wrap{overflow:auto; border-top:1px solid var(--line); border-radius:0 0 16px 16px}
     .grid{position:relative; user-select:none;}
@@ -56,26 +60,34 @@
     @media (max-width:720px){
       .cell{min-width:64px}
     }
+    .break { flex-basis:100%; height:0; }
+
   </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <div class="title">Excel‑Click Trainer (Rows, Columns & Cells)</div>
+    <div class="title">Excel‑Click(Rows, Columns & Cells)</div>
   </header>
 
   <section class="card">
     <div class="controls">
-      <div id="task" class="pill">Click Start to begin a 5‑minute round</div>
-      <div id="explain" class="explain"></div>
-      <div class="spacer"></div>
-      <div class="pill" id="timer">⏳ 01:00</div>
+      <div>Name: <input id="nameInput" class="namebox" type="text" placeholder="Name" aria-label="Your name" /></div>
+      <div id="explainName" class="explain">Enter Name and click on Start to begin</div>
+      <span class="break"></span>
+
+      <div class="pill" id="timer">⏳ 02:00</div>
       <button id="startBtn">Start</button>
       <button id="resetBtn">Reset</button>
-
       <button id="checkBtn" class="primary">Check</button>
       <button id="nextBtn">Next</button>
       <div class="pill" id="score">Score: 0</div>
+      <span class="break"></span>
+
+      <div id="task" class="pill">Click Start to begin a 2‑minute round</div>
+      <div id="explain" class="explain"></div>
+      <div class="spacer"></div>
+
     </div>
     <div class="grid-wrap">
       <div id="grid" class="grid" aria-label="Spreadsheet training grid"></div>
@@ -83,12 +95,13 @@
   </section>
 </div>
 
-<script>
+<script type="module">
+import { submitScoreToFirestore } from '../util.js';
 (function(){
   // ==== Config ====
   const ROWS = 10;
   const COLS = 10;
-  const ROUND_MINUTES = 1; // round length
+  const ROUND_MINUTES = 2; // round length
   const COL_LETTERS = [...Array(COLS)].map((_,i)=> colName(i));
 
   // ==== State ====
@@ -110,12 +123,15 @@
   const timerEl = document.getElementById('timer');
   const startBtn = document.getElementById('startBtn');
   const resetBtn = document.getElementById('resetBtn');
+  const nameInput = document.getElementById('nameInput');
 
   // Build grid DOM
   buildGrid();
   newTask();
   updateTimerDisplay();
-  setLocked(true); // lock until Start pressed
+  setLocked(true);
+  const savedName = localStorage.getItem('excelTrainerName') || '';
+  if(savedName) nameInput.value = savedName; // lock until Start pressed
 
   checkBtn.addEventListener('click', checkAnswer);
   nextBtn.addEventListener('click', newTask);
@@ -297,6 +313,7 @@
   function startTimer(){
     if(running) return;
     running = true; setLocked(false);
+    getPlayerName();
     timerId = setInterval(()=>{
       remaining = Math.max(remaining-1, 0);
       updateTimerDisplay();
@@ -321,15 +338,21 @@
   function fmt(s){ const m=Math.floor(s/60).toString().padStart(2,'0'); const ss=(s%60).toString().padStart(2,'0'); return `${m}:${ss}`; }
   function gameOver(){
     setLocked(true);
+    submitScoreToFirestore('1', getPlayerName(), score, 'excel-click');
     const msg = document.createElement('div');
     msg.className = 'feedback ok';
-    msg.textContent = `⏰ Time's up! Score ${score}. Correct ${correctAns} of ${attempts}.`;
+    msg.textContent = `⏰ Time's up, ${getPlayerName()}! Score ${score}. Correct ${correctAns} of ${attempts}.`;
     taskEl.after(msg);
   }
   function setLocked(v){
     locked = v;
     grid.style.pointerEvents = v ? 'none' : 'auto';
     checkBtn.disabled = v; nextBtn.disabled = v;
+  }
+  function getPlayerName(){
+    const n = (nameInput.value || '').trim();
+    if(n){ localStorage.setItem('excelTrainerName', n); }
+    return n || 'Player';
   }
 
   // ==== Utils ====

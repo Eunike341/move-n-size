@@ -167,15 +167,12 @@ export async function queryAndDisplayData(val, dataContainer) {
 
 export async function calculateUserScores(selectedDate) {
   try {
-    console.log("====received selectedDate:" + selectedDate);
     const day = selectedDate;
     day.setHours(0, 0, 0, 0); // Start of day
     const startOfDay = day.getTime();
 
     day.setHours(23, 59, 59, 999); // End of day
     const endOfDay = day.getTime();
-
-    console.log("===startdate:" + startOfDay+", enddate:" + endOfDay);
 
     const q = query(collection(db, inviteCode),
         where("timestamp", ">=", new Date(startOfDay)),
@@ -201,7 +198,7 @@ export async function calculateUserScores(selectedDate) {
     // Group data by user
     Object.keys(data).forEach(userName => {
         const userEntries = data[userName];
-        const groupedScores = { clicks: {}, placement: {}, typing: {} };
+        const groupedScores = { clicks: {}, placement: {}, typing: {}, 'excel-click': {} };
 
         // Group scores by playType and level for each user
         userEntries.forEach(entry => {
@@ -232,7 +229,8 @@ export async function calculateUserScores(selectedDate) {
                 } else if (entry.score.time !== undefined) {
                     score = 30 / entry.score.time * 400;
                 }
-
+            } else if (entry.playType === "excel-click") {
+                score = entry.score;
             }
 
             groupedScores[entry.playType][key].push(score);
@@ -282,8 +280,17 @@ export async function calculateUserScores(selectedDate) {
             }
         });
 
+        let totalExcelClickScore = 0;
+
+        Object.keys(groupedScores['excel-click']).forEach(key => {
+          const scores = groupedScores['excel-click'][key];
+          const useScore = Math.max(...scores);              // best attempt per level
+          totalExcelClickScore += useScore;
+        });
+
         // Calculate final scores without normalization
-        const finalClicksScore = totalClicksWeight > 0 ? totalClicksScore : 0;
+        let finalClicksScore = totalClicksWeight > 0 ? totalClicksScore : 0;
+        finalClicksScore += totalExcelClickScore;
         const finalPlacementScore = totalPlacementWeight > 0 ? totalPlacementScore : 0;
         const finalTypingScore = totalTypingWeight > 0 ? totalTypingScore : 0;
 
