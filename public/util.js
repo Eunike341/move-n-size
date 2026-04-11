@@ -198,7 +198,7 @@ export async function calculateUserScores(selectedDate) {
     // Group data by user
     Object.keys(data).forEach(userName => {
         const userEntries = data[userName];
-        const groupedScores = { clicks: {}, placement: {}, typing: {}, 'excel-click': {} };
+        const groupedScores = { clicks: {}, placement: {}, typing: {}, 'excel-click': {}, 'excel-click-score': {} };
 
         // Group scores by playType and level for each user
         userEntries.forEach(entry => {
@@ -231,6 +231,8 @@ export async function calculateUserScores(selectedDate) {
                 }
             } else if (entry.playType === "excel-click") {
                 score = entry.score;
+            } else if (entry.playType === "excel-click-score") {
+                score = 100000 / entry.score;
             }
 
             groupedScores[entry.playType][key].push(score);
@@ -284,6 +286,12 @@ export async function calculateUserScores(selectedDate) {
 
         Object.keys(groupedScores['excel-click']).forEach(key => {
           const scores = groupedScores['excel-click'][key];
+          const useScore = Math.max(...scores);              // best attempt per level
+          totalExcelClickScore += useScore;
+        });
+
+        Object.keys(groupedScores['excel-click-score']).forEach(key => {
+          const scores = groupedScores['excel-click-score'][key];
           const useScore = Math.max(...scores);              // best attempt per level
           totalExcelClickScore += useScore;
         });

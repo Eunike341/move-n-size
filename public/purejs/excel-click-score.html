@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Move-N-Size</title>
+    <style>
+        :root{
+          --bg:#f8f9ff; --ink:#1f2430; --muted:#56607a;
+          --accent:#6b8afd; --good:#2fb36e; --bad:#ff5c6e;
+          --panel:#ffffff; --line:#e6e9f5; --header:#f1f3fe;
+          --select:#cfe1ff80; --select-strong:#6b8afd55; --focus:#6b8afd;
+        }
+        *{box-sizing:border-box}
+        body{margin:0; font:16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"; color:var(--ink); background:linear-gradient(180deg, var(--bg), #ffffff)}
+        .wrap{max-width:980px;margin:32px auto;padding:0 16px}
+        header{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+        .title{font-weight:800;font-size:20px}
+        .card{background:var(--panel); border:1px solid var(--line); border-radius:16px; box-shadow:0 6px 18px rgba(20,30,60,.06)}
+        .controls{padding:14px 16px; display:flex; gap:12px; align-items:center; flex-wrap:wrap}
+        .pill{background:var(--header); border:1px solid var(--line); padding:8px 12px; border-radius:999px; font-weight:600}
+        .spacer{flex:1}
+        button{border:1px solid var(--line); background:var(--panel); padding:8px 14px; border-radius:10px; cursor:pointer; font-weight:700}
+        button.primary{background:var(--accent); color:#fff; border-color:transparent}
+        button:disabled{opacity:.5; cursor:not-allowed}
+        .namebox{border:1px solid var(--line); background:var(--panel); padding:8px 12px; border-radius:10px; font-weight:600; min-width:160px}
+        .grid-wrap{overflow:auto; border-top:1px solid var(--line); border-radius:0 0 16px 16px}
+        .grid{position:relative; user-select:none;}
+        .row{display:grid}
+        .cell, .hcol, .hrow, .corner{border-right:1px solid var(--line); border-bottom:1px solid var(--line)}
+        .hcol, .hrow, .corner{background:var(--header); font-weight:700; color:var(--muted)}
+        .hcol, .hrow, .cell{display:flex; align-items:center; justify-content:center}
+        .cell{background:#fff; height:36px; min-width:80px}
+        .hcol{height:32px}
+        .hrow{width:46px}
+        .cell:hover{background:var(--select)}
+        .selected{background:var(--select)}
+        .hcol.active, .hrow.active{background:linear-gradient(0deg, #4b65c2, var(--header)); color:#374060}
+        .feedback{padding:8px 12px; border-radius:10px; font-weight:700}
+        .feedback.ok{background:#e9f8f0; color:#137a46; border:1px solid #bfe6d1}
+        .feedback.no{background:#ffe9ec; color:#a41528; border:1px solid #ffd0d6}
+        .explain{font-size:14px; color:var(--muted)}
+        .break { flex-basis:100%; height:0; }
+        /* How-to box */
+        .howto{
+          margin: 0 16px 12px;
+          padding: 10px 12px;
+          border: 1px dashed var(--line);
+          background: #f8fbff;
+          border-radius: 12px;
+          color: var(--muted);
+          font-size: 14px;
+        }
+        .howto b{ color: var(--ink); }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <header><div class="title">Excel Speedrun: Select Cell and Range</div></header>
+
+    <section class="card">
+        <div class="controls">
+            <div>Name: <input id="nameInput" class="namebox" type="text" placeholder="Name" /></div>
+            <div id="explainName" class="explain">Enter Name and click on <b>Start Timer</b> to begin. Fastest time to score 400 wins!</div>
+            <span class="break"></span>
+            <div class="pill" id="timerDisplay">⏱️ Time: 00:00</div>
+            <button id="startBtn">Start Timer</button>
+            <button id="resetBtn">Reset</button>
+            <button id="checkBtn" class="primary">Check</button>
+            <button id="nextBtn">Next</button>
+            <div class="pill" id="score">Score: 0 / 400</div>
+            <span class="break"></span>
+            <div id="task" class="pill">Click Start to begin timing</div>
+            <div class="spacer"></div>
+        </div>
+
+        <div class="howto" id="howto">
+            <b>How to play:</b> Read the task objective above (e.g. “Click cell C4” or “Select the range A1:C3”),
+            then select the requested cell or range and press <b>Check</b>.
+            You can drag with the mouse, or hold <b>Shift</b> and use the arrow keys to grow/shrink the selection.
+            Press <b>Next</b> for a new objective. Single cells are worth 5 points; ranges are worth 10.
+        </div>
+
+        <div class="grid-wrap"><div id="grid" class="grid"></div></div>
+    </section>
+</div>
+
+<script type="module">
+    import { submitScoreToFirestore } from '../util.js';
+
+    (function(){
+      const ROWS = 10; const COLS = 10; const GOAL_SCORE = 400;
+      const COL_LETTERS = [...Array(COLS)].map((_,i)=> colName(i));
+
+      let anchor = null; let sel = {r1:1,c1:1,r2:1,c2:1};
+      let target = null; let score = 0; let elapsed = 0;
+      let timerId = null; let running = false; let locked = true;
+
+      const grid = document.getElementById('grid');
+      const taskEl = document.getElementById('task');
+      const checkBtn = document.getElementById('checkBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      const scoreEl = document.getElementById('score');
+      const timerEl = document.getElementById('timerDisplay');
+      const startBtn = document.getElementById('startBtn');
+      const resetBtn = document.getElementById('resetBtn');
+      const nameInput = document.getElementById('nameInput');
+
+      buildGrid();
+      newTask();
+      setLocked(true);
+
+      if(localStorage.getItem('excelTrainerName')) nameInput.value = localStorage.getItem('excelTrainerName');
+
+      checkBtn.addEventListener('click', checkAnswer);
+      nextBtn.addEventListener('click', newTask);
+      startBtn.addEventListener('click', startGame);
+      resetBtn.addEventListener('click', resetRound);
+
+      // RE-ADDED: Keyboard Navigation Logic
+      document.addEventListener('keydown', e => {
+        if(locked) return;
+        const d = {ArrowUp:[-1,0], ArrowDown:[1,0], ArrowLeft:[0,-1], ArrowRight:[0,1]}[e.key];
+        if(!d) return;
+
+        e.preventDefault();
+        const [dr, dc] = d;
+        const nr = clamp(sel.r2 + dr, 1, ROWS);
+        const nc = clamp(sel.c2 + dc, 1, COLS);
+
+        if(e.shiftKey) {
+          sel = normalize(sel.r1, sel.c1, nr, nc);
+        } else {
+          sel = normalize(nr, nc, nr, nc);
+        }
+        paintSelection();
+      });
+
+      function buildGrid(){
+        grid.innerHTML = '';
+        const headerRow = document.createElement('div');
+        headerRow.className = 'row';
+        headerRow.style.gridTemplateColumns = `46px ${'1fr '.repeat(COLS).trim()}`;
+        headerRow.appendChild(div('corner'));
+        for(let c=1;c<=COLS;c++){
+          const hc = div('hcol'); hc.textContent = COL_LETTERS[c-1]; hc.dataset.c=c;
+          headerRow.appendChild(hc);
+        }
+        grid.appendChild(headerRow);
+
+        for(let r=1;r<=ROWS;r++){
+          const row = document.createElement('div');
+          row.className = 'row';
+          row.style.gridTemplateColumns = `46px ${'1fr '.repeat(COLS).trim()}`;
+          const hr = div('hrow'); hr.textContent = r; hr.dataset.r=r; row.appendChild(hr);
+          for(let c=1;c<=COLS;c++){
+            const cell = div('cell');
+            cell.dataset.r=r; cell.dataset.c=c;
+            cell.addEventListener('mousedown', (e)=>{
+              if(locked) return;
+              anchor = {r:parseInt(cell.dataset.r), c:parseInt(cell.dataset.c)};
+              sel = normalize(anchor.r, anchor.c, anchor.r, anchor.c);
+              paintSelection();
+              e.preventDefault();
+            });
+            cell.addEventListener('mouseenter', ()=>{
+              if(anchor){
+                const r=parseInt(cell.dataset.r), c=parseInt(cell.dataset.c);
+                sel = normalize(anchor.r, anchor.c, r, c);
+                paintSelection();
+              }
+            });
+            row.appendChild(cell);
+          }
+          grid.appendChild(row);
+        }
+        window.addEventListener('mouseup', ()=>{ anchor=null; });
+      }
+
+      function newTask(){
+        if(locked && score > 0) return;
+        const isRange = Math.random() < 0.5;
+        if(isRange){
+          const w = rand(2, 3); const h = rand(2, 3);
+          const c1 = rand(1, COLS - w + 1); const r1 = rand(1, ROWS - h + 1);
+          target = normalize(r1, c1, r1+h-1, c1+w-1);
+        } else {
+          const r = rand(1, ROWS); const c = rand(1, COLS);
+          target = normalize(r,c,r,c);
+        }
+        sel = normalize(1,1,1,1);
+        paintSelection();
+        updateTaskText();
+        removeFeedback();
+      }
+
+      function updateTaskText(){
+        const t = target;
+        const label = (r,c)=>`${COL_LETTERS[c-1]}${r}`;
+        taskEl.textContent = (t.r1===t.r2 && t.c1===t.c2)
+          ? `Click cell ${label(t.r1,t.c1)}`
+          : `Select the range ${label(t.r1,t.c1)}:${label(t.r2,t.c2)}`;
+      }
+
+      function paintSelection(){
+        grid.querySelectorAll('.cell, .hcol, .hrow').forEach(el=>el.classList.remove('selected','active'));
+        for(let r=sel.r1; r<=sel.r2; r++){
+          grid.querySelector(`.hrow[data-r="${r}"]`)?.classList.add('active');
+          for(let c=sel.c1; c<=sel.c2; c++){
+            grid.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`)?.classList.add('selected');
+          }
+        }
+        for(let c=sel.c1; c<=sel.c2; c++) grid.querySelector(`.hcol[data-c="${c}"]`)?.classList.add('active');
+      }
+
+      function checkAnswer(){
+        if(locked) return;
+        const ok = (sel.r1===target.r1 && sel.c1===target.c1 && sel.r2===target.r2 && sel.c2===target.c2);
+        if(ok){
+          score += (target.r1===target.r2 && target.c1===target.c2 ? 5 : 10);
+          scoreEl.textContent = `Score: ${score} / 400`;
+        }
+        flashFeedback(ok);
+        if(score >= GOAL_SCORE) gameOver();
+      }
+
+      function flashFeedback(ok){
+        removeFeedback();
+        const msg = document.createElement('div');
+        msg.className = `feedback ${ok? 'ok':'no'}`;
+        msg.textContent = ok ? '✅ Correct!' : '❌ Incorrect selection';
+        taskEl.after(msg);
+        if(ok) setTimeout(()=> { if(!locked) newTask(); }, 400);
+      }
+
+      function removeFeedback(){ document.querySelector('.feedback')?.remove(); }
+
+      function startGame(){
+        if(running) return;
+        running = true; setLocked(false);
+        getPlayerName();
+        startBtn.disabled = true;
+        timerId = setInterval(()=>{ elapsed++; updateTimerDisplay(); }, 1000);
+        newTask();
+      }
+
+      function updateTimerDisplay(){
+        const m = Math.floor(elapsed/60).toString().padStart(2,'0');
+        const s = (elapsed%60).toString().padStart(2,'0');
+        timerEl.textContent = `⏱️ Time: ${m}:${s}`;
+      }
+
+      function resetRound(){
+        clearInterval(timerId);
+        score = 0; elapsed = 0;
+        scoreEl.textContent = `Score: 0 / 400`;
+        updateTimerDisplay();
+        running = false; setLocked(true);
+        startBtn.disabled = false;
+        newTask();
+      }
+
+      function gameOver(){
+        clearInterval(timerId); setLocked(true); running = false;
+        submitScoreToFirestore('1', getPlayerName(), elapsed, 'excel-click-score');
+        const msg = document.createElement('div');
+        msg.className = 'feedback ok';
+        msg.innerHTML = `🏁 <b>Finish!</b> Time: ${timerEl.textContent.split(': ')[1]}<br>Time submitted to leaderboard.`;
+        taskEl.after(msg);
+      }
+
+      function setLocked(v){
+        locked = v;
+        grid.style.pointerEvents = v ? 'none' : 'auto';
+        checkBtn.disabled = v; nextBtn.disabled = v;
+      }
+
+      function getPlayerName(){
+        const n = (nameInput.value || '').trim();
+        if(n) localStorage.setItem('excelTrainerName', n);
+        return n || 'Player';
+      }
+
+      function div(cls){ const d=document.createElement('div'); d.className=cls; return d; }
+      function rand(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+      function clamp(v,a,b){ return Math.max(a, Math.min(b,v)); }
+      function colName(index){
+        let n = index+1, s='';
+        while(n>0){ const r=(n-1)%26; s=String.fromCharCode(65+r)+s; n=Math.floor((n-1)/26); }
+        return s;
+      }
+      function normalize(r1,c1,r2,c2){ return {r1:Math.min(r1,r2), c1:Math.min(c1,c2), r2:Math.max(r1,r2), c2:Math.max(c1,c2)}; }
+    })();
+</script>
+</body>
+</html>
