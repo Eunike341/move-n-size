@@ -12,8 +12,26 @@
           --select:#cfe1ff80; --select-strong:#6b8afd55; --focus:#6b8afd;
         }
         *{box-sizing:border-box}
-        body{margin:0; font:16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"; color:var(--ink); background:linear-gradient(180deg, var(--bg), #ffffff)}
-        .wrap{max-width:980px;margin:32px auto;padding:0 16px}
+
+        /* Add/Update these in your <style> section */
+        body {
+          margin: 0;
+          overflow: hidden; /* Prevents scrollbars on desktop */
+          height: 100vh;
+          display: flex;
+          justify-content: center;
+          align-items: flex-start;
+          padding-top: 20px;
+        }
+
+        .wrap {
+          width: 980px; /* Fixed design width */
+          margin: 0 auto;
+          padding: 0 16px;
+          transform-origin: top center;
+          transition: transform 0.1s ease-out;
+        }
+
         header{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
         .title{font-weight:800;font-size:20px}
         .card{background:var(--panel); border:1px solid var(--line); border-radius:16px; box-shadow:0 6px 18px rgba(20,30,60,.06)}
@@ -290,6 +308,34 @@
         return s;
       }
       function normalize(r1,c1,r2,c2){ return {r1:Math.min(r1,r2), c1:Math.min(c1,c2), r2:Math.max(r1,r2), c2:Math.max(c1,c2)}; }
+
+      // Add this inside your script block
+    function applyDesktopScaling() {
+      const wrapper = document.querySelector('.wrap');
+
+      // Design dimensions (the 'native' size of your game)
+      const designWidth = 1020;
+      const designHeight = 820; // Height of headers + grid + padding
+
+      const windowWidth = window.innerWidth;
+      const windowHeight = window.innerHeight;
+
+      // Calculate which dimension is more restrictive
+      const widthRatio = windowWidth / designWidth;
+      const heightRatio = windowHeight / designHeight;
+
+      // Use the smaller ratio, but don't zoom in past 100% (1.0)
+      const scaleFactor = Math.min(widthRatio, heightRatio, 1);
+
+      wrapper.style.transform = `scale(${scaleFactor})`;
+    }
+
+    // Attach to browser events
+    window.addEventListener('resize', applyDesktopScaling);
+    window.addEventListener('load', applyDesktopScaling);
+
+    // Run once immediately
+    applyDesktopScaling();
     })();
 </script>
 </body>

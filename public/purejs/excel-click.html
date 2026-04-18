@@ -106,7 +106,7 @@
       <div id="explainName" class="explain">Enter Name and click on <b>Start</b> to begin</div>
       <span class="break"></span>
 
-      <div class="pill" id="timer">⏳ 02:00</div>
+      <div class="pill" id="timer">⏳ 03:00</div>
       <button id="startBtn">Start</button>
       <button id="resetBtn">Reset</button>
       <button id="checkBtn" class="primary">Check</button>
@@ -114,7 +114,7 @@
       <div class="pill" id="score">Score: 0</div>
       <span class="break"></span>
 
-      <div id="task" class="pill">Click Start to begin a 2‑minute round</div>
+      <div id="task" class="pill">Click Start to begin a 3‑minute round</div>
       <div id="explain" class="explain"></div>
       <div class="spacer"></div>
 
@@ -139,7 +139,7 @@ import { submitScoreToFirestore } from '../util.js';
   // ==== Config ====
   const ROWS = 10;
   const COLS = 10;
-  const ROUND_MINUTES = 2; // round length
+  const ROUND_MINUTES = 3; // round length
   const COL_LETTERS = [...Array(COLS)].map((_,i)=> colName(i));
 
   // ==== State ====
@@ -413,9 +413,8 @@ import { submitScoreToFirestore } from '../util.js';
   function normalize(r1,c1,r2,c2){ return {r1:Math.min(r1,r2), c1:Math.min(c1,c2), r2:Math.max(r1,r2), c2:Math.max(c1,c2)}; }
   function sameRect(a,b){ return a.r1===b.r1 && a.c1===b.c1 && a.r2===b.r2 && a.c2===b.c2; }
   function isSingle(t){ return t.r1===t.r2 && t.c1===t.c2; }
-})();
 
-    function applyDesktopScaling() {
+  function applyDesktopScaling() {
       const wrapper = document.querySelector('.wrap');
 
       // 1. Define your "Safe Zone" (the size the game was designed for)
@@ -447,6 +446,10 @@ import { submitScoreToFirestore } from '../util.js';
 
     // Run immediately
     applyDesktopScaling();
+
+})();
+
+
 
 
 </script>
