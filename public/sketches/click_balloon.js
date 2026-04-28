@@ -79,41 +79,52 @@ function decreaseTimer() {
   }
 }
 
+let lastClickTime = 0;
 function mousePressed() {
+  let currentTime = millis();
+  let timeDiff = currentTime - lastClickTime;
+
+  // Start timer on the very first interaction
   if (!timerStarted && mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
-      timerStarted = true;
-      setInterval(decreaseTimer, 1000);
+    timerStarted = true;
+    setInterval(decreaseTimer, 1000);
   }
 
+  // Single loop for all balloon logic
   for (let balloon of balloons) {
     if (balloon.isClicked(mouseX, mouseY)) {
-      if (balloon.popType !== 'double') {
-        if (mouseButton === LEFT && balloon.popType === 'left') {
-            balloon.pop();
-            score += 2;
-            break;
-        } else if (mouseButton === RIGHT && balloon.popType === 'right') {
-            balloon.pop();
-            score += 2;
-            break;
-        }
+
+      // 1. Check for DOUBLE CLICK (within 500ms)
+      if (timeDiff < 500 && mouseButton === LEFT && balloon.popType === 'double') {
+        balloon.pop();
+        score += 3;
+        lastClickTime = 0; // Reset to prevent a 3rd click from double-popping
+        return; // Exit the function entirely
       }
 
+      // 2. Check for LEFT CLICK
+      else if (mouseButton === LEFT && balloon.popType === 'left') {
+        balloon.pop();
+        score += 2;
+        lastClickTime = 0;
+        break; // Stop looking at other balloons
+      }
+
+      // 3. Check for RIGHT CLICK
+      else if (mouseButton === RIGHT && balloon.popType === 'right') {
+        balloon.pop();
+        score += 2;
+        lastClickTime = 0;
+        break; // Stop looking at other balloons
+      }
     }
   }
+  if (mouseButton === LEFT) {
+    lastClickTime = currentTime;
+  }
+
 }
 
-function doubleClicked() {
-  console.log('double clicked');
-  for (let balloon of balloons) {
-    if ( balloon.popType === 'double' && balloon.isClicked(mouseX, mouseY) ) {
-      console.log('double clicked popped');
-      balloon.pop();
-      score += 3;
-      break;
-    }
-  }
-}
 
 
 class Balloon {
@@ -127,10 +138,6 @@ class Balloon {
     // Randomly assign a pop type and corresponding color
     const popTypes = ['left', 'right', 'double'];
     this.popType = random(popTypes);
-
-    if (this.popType === 'double') {
-        this.speed = random(0.5, 1); //double click balloon moves slower
-    }
 
     if (this.popType === 'left') {
       this.image = leftBalloonImage;
