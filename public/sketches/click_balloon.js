@@ -87,15 +87,18 @@ function mousePressed() {
 
   for (let balloon of balloons) {
     if (balloon.isClicked(mouseX, mouseY)) {
-      if (mouseButton === LEFT && balloon.popType === 'left') {
-        balloon.pop();
-        score += 2;
-        break;
-      } else if (mouseButton === RIGHT && balloon.popType === 'right') {
-        balloon.pop();
-        score += 2;
-        break;
+      if (balloon.popType !== 'double') {
+        if (mouseButton === LEFT && balloon.popType === 'left') {
+            balloon.pop();
+            score += 2;
+            break;
+        } else if (mouseButton === RIGHT && balloon.popType === 'right') {
+            balloon.pop();
+            score += 2;
+            break;
+        }
       }
+
     }
   }
 }
