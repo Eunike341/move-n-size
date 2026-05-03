@@ -71,7 +71,7 @@
         .mouse-part { transition: fill 0.05s ease; fill: var(--btn-idle); }
         .mouse-main { fill: #d1d1d1; }
         .is-target { fill: var(--btn-target) !important; }
-        .is-success { fill: var(--btn-success) !important; }
+        .is-success { fill: var(--btn-success) !important; transform: scale(0.98);}
         .is-fail { fill: var(--btn-fail) !important; }
 
         /* Button Container keeps height even when button is hidden */
@@ -209,15 +209,15 @@
             
             // Position pointer over left button
             pointer.style.display = 'block';
-            pointer.style.left = '215px'; 
+            pointer.style.left = 'calc(50% - 47px)'; 
         } else if (timeLeft > 0) {
             currentTarget = 'right';
             btnRight.classList.add('is-target');
-            instruction.innerHTML = 'Follow the arrow: <span class="right-text">LEFT</span> click!';
+            instruction.innerHTML = 'Follow the arrow: <span class="right-text">RIGHT</span> click!';
             
             // Position pointer over right button
             pointer.style.display = 'block';
-            pointer.style.left = '310px';
+            pointer.style.left = 'calc(50% + 22px)';
         }
     }
 
@@ -234,10 +234,7 @@
                 targetEl.classList.remove('is-success');
                 if (gameActive) targetEl.classList.add('is-target');
             }, 80);
-        } else {
-            targetEl.classList.add('is-fail');
-            setTimeout(() => targetEl.classList.remove('is-fail'), 100);
-        }
+        } 
     }
 
     btnLeft.addEventListener('mousedown', (e) => { if(e.button === 0) handleInput('left'); });
