@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mouse Mastery Game</title>
+    <style>
+        :root {
+            --bg-main: #f0f8ff;
+            --game-box-bg: #fff0eb; /* Peach/Pink from screenshot */
+            --btn-idle: #b0b0b0;
+            --btn-target: #808080; 
+            --btn-success: #2ecc71; 
+            --btn-fail: #e74c3c;    
+            --text-green: #4caf50;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--bg-main);
+            margin: 40px;
+            user-select: none;
+        }
+
+        h1 { color: var(--text-green); margin-bottom: 10px; }
+        
+        .home-link {
+            text-decoration: none;
+            color: var(--text-green);
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .input-group { margin-bottom: 20px; font-size: 1.2rem; }
+        input#user-name {
+            padding: 5px;
+            font-size: 1.1rem;
+            border: 2px solid #000;
+            width: 250px;
+        }
+
+        /* Fixed Game Container to prevent "jumping" */
+        #game-stage {
+            width: 550px;
+            height: 400px;
+            background-color: var(--game-box-bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .stats { font-size: 1.8rem; margin-bottom: 10px; }
+        .score-board { font-size: 1.3rem; margin-bottom: 10px; }
+        
+        #instruction {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            height: 30px; /* Fixed height for text */
+        }
+
+        .left-text { color: #2ecc71; font-weight: bold; }
+        .right-text { color: #e67e22; font-weight: bold; }
+
+        /* Mouse SVG */
+        #mouse-svg { width: 160px; height: auto; }
+        .mouse-part { transition: fill 0.05s ease; fill: var(--btn-idle); }
+        .mouse-main { fill: #d1d1d1; }
+        .is-target { fill: var(--btn-target) !important; }
+        .is-success { fill: var(--btn-success) !important; }
+        .is-fail { fill: var(--btn-fail) !important; }
+
+        /* Button Container keeps height even when button is hidden */
+        .controls {
+            height: 60px;
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        button#start-btn {
+            padding: 10px 30px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            background: white;
+            border: 1px solid #ccc;
+        }
+
+        /* Update your existing CSS with these specific rules */
+        #game-stage, 
+        #game-stage *, 
+        h1, 
+        .input-group {
+            -webkit-user-select: none; /* Safari */
+            -ms-user-select: none;     /* IE 10 and IE 11 */
+            user-select: none;         /* Standard syntax */
+            
+            /* Prevents the tap highlight color on mobile */
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Ensure the input field remains usable so the player can still type their name */
+        #user-name {
+            -webkit-user-select: text;
+            -ms-user-select: text;
+            user-select: text;
+        }
+
+        #click-pointer {
+            position: absolute;
+            top: 140px; /* Positioned above the mouse SVG */
+            font-size: 2rem;
+            color: var(--btn-fail);
+            display: none; /* Hidden by default */
+            transition: left 0.2s ease-in-out;
+            z-index: 10;
+            animation: bounce 0.6s infinite alternate;
+        }
+
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Level 1</h1>
+    <a href="#" class="home-link">➡️ Home</a>
+
+    <div class="input-group">
+        Name: <input type="text" id="user-name" placeholder="Enter your name...">
+    </div>
+
+    <div id="game-stage">
+        <div id="click-pointer">⬇</div>
+        <div class="stats">Time: <span id="timer">6</span></div>
+        <div class="score-board">Score: <span id="score">0</span></div>
+        
+        <div id="instruction">Enter Name and Click Start to Play!</div>
+
+        <svg id="mouse-svg" viewBox="0 0 100 140">
+            <path class="mouse-main" d="M10,50 Q10,10 50,10 Q90,10 90,50 L90,90 Q90,130 50,130 Q10,130 10,90 Z" stroke="#333" stroke-width="2"/>
+            <path id="btn-left" class="mouse-part" d="M15,50 Q15,15 48,15 L48,60 L15,60 Z" stroke="#333" stroke-width="1"/>
+            <path id="btn-right" class="mouse-part" d="M52,15 Q85,15 85,50 L85,60 L52,60 Z" stroke="#333" stroke-width="1"/>
+            <rect x="46" y="30" width="8" height="15" rx="4" fill="#555" />
+        </svg>
+
+        <div class="controls">
+            <button id="start-btn">Start Game</button>
+        </div>
+    </div>
+
+<script>
+    // Add this inside your <script> tag
+    document.addEventListener('dragstart', (e) => e.preventDefault());
+
+    const btnLeft = document.getElementById('btn-left');
+    const btnRight = document.getElementById('btn-right');
+    const instruction = document.getElementById('instruction');
+    const scoreDisplay = document.getElementById('score');
+    const timerDisplay = document.getElementById('timer');
+    const startBtn = document.getElementById('start-btn');
+
+    let score = 0;
+    let timeLeft = 6;
+    let gameActive = false;
+    let currentTarget = 'left';
+
+    document.addEventListener('contextmenu', e => e.preventDefault());
+
+    function startGame() {
+        score = 0;
+        timeLeft = 6;
+        gameActive = true;
+        scoreDisplay.textContent = score;
+        timerDisplay.textContent = timeLeft;
+        startBtn.style.visibility = 'hidden'; // Keeps space, prevents jump
+        
+        updatePhase();
+
+        const timerInterval = setInterval(() => {
+            timeLeft--;
+            timerDisplay.textContent = timeLeft;
+            
+            updatePhase();
+
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                endGame();
+            }
+        }, 1000);
+    }
+
+    const pointer = document.getElementById('click-pointer');
+
+    function updatePhase() {
+        btnLeft.classList.remove('is-target');
+        btnRight.classList.remove('is-target');
+
+        if (timeLeft > 3) {
+            currentTarget = 'left';
+            btnLeft.classList.add('is-target');
+            instruction.innerHTML = 'Follow the arrow: <span class="left-text">LEFT</span> click!';
+            
+            // Position pointer over left button
+            pointer.style.display = 'block';
+            pointer.style.left = '215px'; 
+        } else if (timeLeft > 0) {
+            currentTarget = 'right';
+            btnRight.classList.add('is-target');
+            instruction.innerHTML = 'Follow the arrow: <span class="right-text">LEFT</span> click!';
+            
+            // Position pointer over right button
+            pointer.style.display = 'block';
+            pointer.style.left = '310px';
+        }
+    }
+
+    function handleInput(side) {
+        if (!gameActive) return;
+
+        const targetEl = side === 'left' ? btnLeft : btnRight;
+
+        if (side === currentTarget) {
+            score++;
+            scoreDisplay.textContent = score;
+            targetEl.classList.add('is-success');
+            setTimeout(() => {
+                targetEl.classList.remove('is-success');
+                if (gameActive) targetEl.classList.add('is-target');
+            }, 80);
+        } else {
+            targetEl.classList.add('is-fail');
+            setTimeout(() => targetEl.classList.remove('is-fail'), 100);
+        }
+    }
+
+    btnLeft.addEventListener('mousedown', (e) => { if(e.button === 0) handleInput('left'); });
+    btnRight.addEventListener('mousedown', (e) => { if(e.button === 2) handleInput('right'); });
+
+    function endGame() {
+        gameActive = false;
+        pointer.style.display = 'none'; // Hide when game ends
+        const name = document.getElementById('user-name').value || "Player";
+        instruction.innerHTML = `Great job, ${name}! Score: ${score}`;
+        startBtn.style.visibility = 'visible';
+        startBtn.textContent = 'Play Again';
+        btnLeft.classList.remove('is-target');
+        btnRight.classList.remove('is-target');
+    }
+
+    startBtn.addEventListener('click', startGame);
+</script>
+</body>
+</html>
